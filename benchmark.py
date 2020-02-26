@@ -32,13 +32,14 @@ def grayscale(x):
 
 """
 
-def Flatten(x):
-    return x.view(-1, 16 * 5 * 5)
+class Flatten(nn.Module):
+    def forward(self, input):
+        return input.view(-1, int(input.numel()/input.shape[0]))
 
 
 class FC_M1(nn.Module):
     def __init__(self):
-        super(Net, self).__init__()
+        super(FC_M1, self).__init__()
         self.conv = nn.Conv2d(3, 1, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
@@ -53,13 +54,16 @@ class FC_M1(nn.Module):
 
     def forward(self, x):
         x = self.pool(F.relu(self.conv(x)))
-        x = self.flatten()
+        x = self.flatten(x)
         x = self.fc(x)
         return x
 
+    def model_string(self):
+        return "Full Color pipeline model 1"
+
 class FC_M2(nn.Module):
     def __init__(self):
-        super(Net, self).__init__()
+        super(FC_M2, self).__init__()
         self.conv = nn.Conv2d(3, 5, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
@@ -74,13 +78,16 @@ class FC_M2(nn.Module):
 
     def forward(self, x):
         x = self.pool(F.relu(self.conv(x)))
-        x = self.flatten()
+        x = self.flatten(x)
         x = self.fc(x)
         return x
 
+    def model_string(self):
+        return "Full Color pipeline model 2"
+
 class FC_M3(nn.Module):
     def __init__(self):
-        super(Net, self).__init__()
+        super(FC_M3, self).__init__()
         self.conv = nn.Conv2d(3, 3, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
@@ -95,13 +102,16 @@ class FC_M3(nn.Module):
 
     def forward(self, x):
         x = self.pool(F.relu(self.conv(x)))
-        x = self.flatten()
+        x = self.flatten(x)
         x = self.fc(x)
         return x
 
+    def model_string(self):
+        return "Full Color pipeline model 3"
+
 class FC_M4(nn.Module):
     def __init__(self):
-        super(Net, self).__init__()
+        super(FC_M4, self).__init__()
         self.conv = nn.Conv2d(3, 5, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
@@ -117,13 +127,16 @@ class FC_M4(nn.Module):
 
     def forward(self, x):
         x = self.pool(F.relu(self.conv(x)))
-        x = self.flatten()
+        x = self.flatten(x)
         x = self.fc2(self.fc1(x))
         return x
 
+    def model_string(self):
+        return "Full Color pipeline model 4"
+
 class FC_M5(nn.Module):
     def __init__(self):
-        super(Net, self).__init__()
+        super(FC_M5, self).__init__()
         self.conv1 = nn.Conv2d(3, 5, 5)
         self.conv2 = nn.Conv2d(5, 6, 5)
         self.pool = nn.MaxPool2d(2, 2)
@@ -143,9 +156,12 @@ class FC_M5(nn.Module):
     def forward(self, x):
         x = self.pool(F.relu(self.conv1(x)))
         x = self.pool(F.relu(self.conv2(x)))
-        x = self.flatten()
+        x = self.flatten(x)
         x = self.fc2(self.fc1(x))
         return x
+
+    def model_string(self):
+        return "Full Color pipeline model 5"
 
 
 """
@@ -156,7 +172,7 @@ class FC_M5(nn.Module):
 
 class G_M1(nn.Module):
     def __init__(self):
-        super(Net, self).__init__()
+        super(G_M1, self).__init__()
         self.conv = nn.Conv2d(3, 1, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
@@ -171,13 +187,16 @@ class G_M1(nn.Module):
 
     def forward(self, x):
         x = self.pool(F.relu(self.conv(x)))
-        x = self.flatten()
+        x = self.flatten(x)
         x = self.fc(x)
         return x
 
+    def model_string(self):
+        return "Grayscale pipeline model 1"
+
 class G_M2(nn.Module):
     def __init__(self):
-        super(Net, self).__init__()
+        super(G_M2, self).__init__()
         self.conv = nn.Conv2d(1, 5, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
@@ -192,13 +211,16 @@ class G_M2(nn.Module):
 
     def forward(self, x):
         x = self.pool(F.relu(self.conv(x)))
-        x = self.flatten()
+        x = self.flatten(x)
         x = self.fc(x)
         return x
 
+    def model_string(self):
+        return "Grayscale pipeline model 2"
+
 class G_M3(nn.Module):
     def __init__(self):
-        super(Net, self).__init__()
+        super(G_M3, self).__init__()
         self.conv = nn.Conv2d(1, 3, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
@@ -213,13 +235,16 @@ class G_M3(nn.Module):
 
     def forward(self, x):
         x = self.pool(F.relu(self.conv(x)))
-        x = self.flatten()
+        x = self.flatten(x)
         x = self.fc(x)
         return x
 
+    def model_string(self):
+        return "Grayscale pipeline model 3"
+
 class G_M4(nn.Module):
     def __init__(self):
-        super(Net, self).__init__()
+        super(G_M4, self).__init__()
         self.conv = nn.Conv2d(1, 5, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
@@ -235,13 +260,16 @@ class G_M4(nn.Module):
 
     def forward(self, x):
         x = self.pool(F.relu(self.conv(x)))
-        x = self.flatten()
+        x = self.flatten(x)
         x = self.fc2(self.fc1(x))
         return x
 
+    def model_string(self):
+        return "Grayscale pipeline model 4"
+
 class G_M5(nn.Module):
     def __init__(self):
-        super(Net, self).__init__()
+        super(G_M5, self).__init__()
         self.conv1 = nn.Conv2d(1, 5, 5)
         self.conv2 = nn.Conv2d(5, 6, 5)
         self.pool = nn.MaxPool2d(2, 2)
@@ -261,9 +289,12 @@ class G_M5(nn.Module):
     def forward(self, x):
         x = self.pool(F.relu(self.conv1(x)))
         x = self.pool(F.relu(self.conv2(x)))
-        x = self.flatten()
+        x = self.flatten(x)
         x = self.fc2(self.fc1(x))
         return x
+
+    def model_string(self):
+        return "Grayscale pipeline model 5"
 
 
 
