@@ -6,6 +6,11 @@ import torchvision.transforms as transforms
 
 import torch.optim as optim
 
+import time
+
+def now():
+    return int(round(time.time() * 1000))
+
 transform = transforms.Compose(
     [transforms.ToTensor(),
      transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
@@ -28,9 +33,14 @@ import torch.nn.functional as F
 
 num_epochs = 1
 
+birthday = now()
+num_models_trained = 0
+
 for data_pipeline in bench_suite.keys():
+
     pipeline_fn, models = bench_suite[data_pipeline]
     for model in models:
+        num_models_trained += 1
         # Train this model
 
         net = model()
@@ -45,7 +55,7 @@ for data_pipeline in bench_suite.keys():
                 # get the inputs; data is a list of [inputs, labels]
                 inputs, labels = data
 
-                inputs = pipeline_fn(inputs)
+                inputs = torch.stack([pipeline_fn(inputs[i]) for i in range(inputs.shape[0])])
 
                 # zero the parameter gradients
                 optimizer.zero_grad()
@@ -64,3 +74,8 @@ for data_pipeline in bench_suite.keys():
                     running_loss = 0.0
 
             print('Finished Training: %s' % net.model_string())
+
+time_taken = now() - birthday
+
+throughput = num_models_trained / time_taken
+print("Trained models with an average throughput of %f micro-Hz" % (throughput * 1000000))

@@ -24,7 +24,7 @@ def full_color(x):
 # Grayscale Data Pipeline -- convert points to 1-channel images
 def grayscale(x):
     grayscale_transform = transforms.Grayscale(num_output_channels=1)
-    return grayscale_transform(x)
+    return transforms.ToTensor()(grayscale_transform(transforms.ToPILImage(mode='RGB')(x)))
 
 """
 
@@ -147,7 +147,7 @@ class FC_M5(nn.Module):
         c_out, h_out, w_out = conv_dimensions(3, 32, 32, 5, 1, 0, 5, 5)
         c_out, h_out, w_out = pool_dimensions(5, h_out, w_out, 2)
         c_out, h_out, w_out = conv_dimensions(5, h_out, w_out, 6, 1, 0, 5, 5)
-        c_out, h_out, w_out = pool_dimensions(5, h_out, w_out, 2)
+        c_out, h_out, w_out = pool_dimensions(6, h_out, w_out, 2)
         flatten_size = c_out * h_out * w_out
 
         self.fc1 = nn.Linear(flatten_size, 50)
@@ -173,13 +173,13 @@ class FC_M5(nn.Module):
 class G_M1(nn.Module):
     def __init__(self):
         super(G_M1, self).__init__()
-        self.conv = nn.Conv2d(3, 1, 5)
+        self.conv = nn.Conv2d(1, 1, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
 
         # Calculate the output size of the Flatten Layer
         # conv_dimensions(c_in, h_in, w_in, c_out, stride, pad, k_height, k_width)
-        c_out, h_out, w_out = conv_dimensions(3, 32, 32, 1, 1, 0, 5, 5)
+        c_out, h_out, w_out = conv_dimensions(1, 32, 32, 1, 1, 0, 5, 5)
         c_out, h_out, w_out = pool_dimensions(1, h_out, w_out, 2)
         flatten_size = c_out * h_out * w_out
 
@@ -280,7 +280,7 @@ class G_M5(nn.Module):
         c_out, h_out, w_out = conv_dimensions(1, 32, 32, 5, 1, 0, 5, 5)
         c_out, h_out, w_out = pool_dimensions(5, h_out, w_out, 2)
         c_out, h_out, w_out = conv_dimensions(5, h_out, w_out, 6, 1, 0, 5, 5)
-        c_out, h_out, w_out = pool_dimensions(5, h_out, w_out, 2)
+        c_out, h_out, w_out = pool_dimensions(6, h_out, w_out, 2)
         flatten_size = c_out * h_out * w_out
 
         self.fc1 = nn.Linear(flatten_size, 50)
