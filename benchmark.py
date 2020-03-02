@@ -897,16 +897,35 @@ class G_M15(nn.Module):
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
 
+        # Calculating total memory usage:
+        print("Model weights (units are weights, where one weight is 4 bytes):")
+        print("Note: These numbers are already doubled to account for gradient space")
+        print(1*30*5*5*2)
+        print(30*60*5*5*2)
+
+
+        print("\nIntermediate Layers:")
         # Calculate the output size of the Flatten Layer
         # conv_dimensions(c_in, h_in, w_in, c_out, stride, pad, k_height, k_width)
+        print(1*32*32)
         c_out, h_out, w_out = conv_dimensions(1, 32, 32, 30, 1, 0, 5, 5)
+        print(c_out*h_out*w_out)
         c_out, h_out, w_out = pool_dimensions(30, h_out, w_out, 2)
+        print(c_out*h_out*w_out)
         c_out, h_out, w_out = conv_dimensions(30, h_out, w_out, 60, 1, 0, 5, 5)
+        print(c_out*h_out*w_out)
         c_out, h_out, w_out = pool_dimensions(60, h_out, w_out, 2)
+        print(c_out*h_out*w_out)
         flatten_size = c_out * h_out * w_out
+        print(500)
 
+        print("\nMore model weights:")
         self.fc1 = nn.Linear(flatten_size, 500)
+        print(flatten_size * 500 * 2)
         self.fc2 = nn.Linear(500, 10)
+        print(500*10*2)
+
+
 
     def forward(self, x):
         x = self.pool(F.relu(self.conv1(x)))
