@@ -34,17 +34,7 @@ dpm.pipelines[dp1_id].add_model(models[1])
 dpm.pipelines[dp2_id].add_model(models[2])
 dpm.pipelines[dp2_id].add_model(models[3])
 
-for (x, y) in data:
-    # if the data pipeline is full, then train_sample will stall until the data pipeline
-    # has enough space for another sample
-    dpm.pipelines[dp1_id].train_sample(x=x, y=y)
-    dpm.pipelines[dp2_id].train_sample(x=x, y=y)
-
-# Wait until training has completed
-# .empty() returns true if there are no samples being processed within this data
-# pipeline, including on the FPGA boards.
-while !dpm.pipelines[dp1_id].empty() and !dpm.pipelines[dp2_id].empty():
-    sleep(5)
+train_models(dpm, data)
 
 # Retrieve accuracy from each metric
 for model in dpm.pipelines[dp1_id].models:
