@@ -81,7 +81,8 @@ def train_models(dpm, data):
                 processed_data = dp.pipeline_fn(x)
 
                 dp.train(processed_data, y)
-                # Will store values in local statistics storage struct, return struct to user
+                # Later, this will store values in local statistics
+                # structand return the struct to the user
                 if i % 2000 == 0:
                     loss = dp.retrieve('loss')
                     print(loss)
