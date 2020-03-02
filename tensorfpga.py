@@ -1,6 +1,44 @@
 
+# Given a det of data pipelines and connectivity to a worker finder, produce
+# an allocation of boards to data pipelines.
+# This algorithm works as follows:
+#  - Calculate the proportion of models assigned to each data pipeline
+#  - Calculate the proportion of model managers assigned to each board
+#  - For each data pipeline:
+#     - Assign boards to it until the proportion of model managers assigned to
+#     - is greater than or equal to the proportion of models that belongs to it
 def allocate_boards(dpm):
-    pass
+    # Calculate the proportion of models that belong to each data pipeline
+    num_models = 0
+    for dp in dpm:
+        num_models += len(dp.models)
+
+    for dp in dpm:
+        dp.prop_models = len(dp.models) / num_models
+
+    # Calculate the proportion of model managers assigned to each board
+    boards = WorkerFinder.get_boards()
+    num_model_managers = 0
+    for board in boards:
+        num_model_managers.append(board.num_model_managers)
+
+    for board in boards:
+        board.prop_mm = board.num_model_managers / num_model_managers
+
+    # For each data pipeline, assign boards to it until it has a proportionate
+    # amount of computing power in the system.
+    for dp in dpm:
+        dp.prop_mm = 0.
+        dp.boards = []
+        while dp.prop_mm < dp.prop_models:
+            board = boards[0]
+            board.assign_dp(dp)
+            dp.boards.append(board)
+            dp.prop_mm += board.prop_mm
+
+    # At this point, each board has been assigned one data pipeline and data
+    # pipelines are distributed equitably across boards
+
 
 
 # Given a Data Pipeline Manager, find the available boards and train all of
