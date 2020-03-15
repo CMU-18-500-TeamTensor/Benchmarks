@@ -31,7 +31,7 @@ def get_CIFAR10_dataset():
 #import torch.nn.functional as F
 
 
-def main():
+def main(device):
     num_epochs = 1
 
     birthday = now()
@@ -48,6 +48,7 @@ def main():
             # Train this model
 
             net = model()
+            #net.to(device)
 
             criterion = nn.CrossEntropyLoss()
             optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
@@ -59,6 +60,7 @@ def main():
                     # get the inputs; data is a list of [inputs, labels]
                     inputs, labels = data
 
+                    #NOTE: What does this line at the bottom do/whats the difference between line 64 and line 61?
                     inputs = torch.stack([pipeline_fn(inputs[i]) for i in range(inputs.shape[0])])
 
                     # zero the parameter gradients
@@ -92,12 +94,16 @@ def main():
     for i in range(len(statistics)):
         print("Model %d stats: %s" % (i+1,statistics[i]))
 
-main()
+if __name__ == '__main__':
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    # Assuming that we are on a CUDA machine, this should print a CUDA device:
+    print(device)
+    main(device)
 
 
 '''
 Statistics 
-Hardware: 3.1 GHz Intel Core i5
+Hardware: NVIDIA GeForce RTX 2060 SUPER
 
 Trained models with an average throughput of 18.883078
 Trained models at an average time of 52.957 seconds
@@ -131,4 +137,42 @@ Model 27 stats: Time taken: 49.035 seconds, Loss value: 886.731
 Model 28 stats: Time taken: 50.498 seconds, Loss value: 907.535
 Model 29 stats: Time taken: 197.464 seconds, Loss value: 901.640
 Model 30 stats: Time taken: 119.341 seconds, Loss value: 945.179
+
+
+
+Hardware: Intel(R) Core(TM) i7-9700F CPU @ 3.00 GHz 3.00 GHz
+
+Time for model:  88890
+Trained models with an average throughput of 24.921083
+Trained models at an average time of 40.100 seconds
+Model 1 stats: Time taken: 12.247 seconds, Loss value: 994.131
+Model 2 stats: Time taken: 14.784 seconds, Loss value: 759.224
+Model 3 stats: Time taken: 14.622 seconds, Loss value: 811.628
+Model 4 stats: Time taken: 20.136 seconds, Loss value: 715.087
+Model 5 stats: Time taken: 22.665 seconds, Loss value: 768.794
+Model 6 stats: Time taken: 24.846 seconds, Loss value: 838.152
+Model 7 stats: Time taken: 33.105 seconds, Loss value: 889.310
+Model 8 stats: Time taken: 36.692 seconds, Loss value: 973.237
+Model 9 stats: Time taken: 39.287 seconds, Loss value: 965.914
+Model 10 stats: Time taken: 39.266 seconds, Loss value: 1150.552
+Model 11 stats: Time taken: 19.270 seconds, Loss value: 697.697
+Model 12 stats: Time taken: 24.998 seconds, Loss value: 623.859
+Model 13 stats: Time taken: 27.572 seconds, Loss value: 618.720
+Model 14 stats: Time taken: 151.185 seconds, Loss value: 606.125
+Model 15 stats: Time taken: 83.843 seconds, Loss value: 576.875
+Model 16 stats: Time taken: 18.548 seconds, Loss value: 1068.568
+Model 17 stats: Time taken: 22.174 seconds, Loss value: 963.580
+Model 18 stats: Time taken: 20.550 seconds, Loss value: 971.986
+Model 19 stats: Time taken: 26.596 seconds, Loss value: 1005.134
+Model 20 stats: Time taken: 28.523 seconds, Loss value: 1049.507
+Model 21 stats: Time taken: 31.286 seconds, Loss value: 1139.938
+Model 22 stats: Time taken: 36.644 seconds, Loss value: 1152.150
+Model 23 stats: Time taken: 37.675 seconds, Loss value: 1150.964
+Model 24 stats: Time taken: 38.490 seconds, Loss value: 1152.036
+Model 25 stats: Time taken: 40.988 seconds, Loss value: 1151.915
+Model 26 stats: Time taken: 26.474 seconds, Loss value: 923.730
+Model 27 stats: Time taken: 32.037 seconds, Loss value: 904.503
+Model 28 stats: Time taken: 33.611 seconds, Loss value: 905.850
+Model 29 stats: Time taken: 156.003 seconds, Loss value: 902.330
+Model 30 stats: Time taken: 88.890 seconds, Loss value: 954.624
 '''
