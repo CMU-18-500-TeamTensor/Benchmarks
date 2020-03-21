@@ -41,14 +41,17 @@ def main(device):
 
     statistics = []
     for data_pipeline in bench_suite.keys():
+        print("Iterating through pipeline")
         pipeline_fn, models = bench_suite[data_pipeline]
         for model in models:
+            print("Starting with first model")
             time_to_train = now()
             num_models_trained += 1
             # Train this model
 
-            net = model()
-            #net.to(device)
+            #net = model()
+            net = model().to(device)
+            
 
             criterion = nn.CrossEntropyLoss()
             optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
@@ -56,12 +59,14 @@ def main(device):
             for epoch in range(num_epochs):  # loop over the dataset multiple times
 
                 running_loss = 0.0
+                print("Beginning training now")
                 for i, data in enumerate(trainloader, 0):
                     # get the inputs; data is a list of [inputs, labels]
-                    inputs, labels = data
-
-                    #NOTE: What does this line at the bottom do/whats the difference between line 64 and line 61?
-                    inputs = torch.stack([pipeline_fn(inputs[i]) for i in range(inputs.shape[0])])
+                    #inputs,labels = data
+                    #inputs = torch.stack([pipeline_fn(inputs[i]) for i in range(inputs.shape[0])])
+                    
+                    inputs, labels = data[0], data[1].to(device) #.to(device), data[1].to(device)
+                    inputs = torch.stack([pipeline_fn(inputs[i]) for i in range(inputs.shape[0])]).to(device)
 
                     # zero the parameter gradients
                     optimizer.zero_grad()
@@ -104,45 +109,45 @@ if __name__ == '__main__':
 '''
 Statistics 
 Hardware: NVIDIA GeForce RTX 2060 SUPER
+Seems to be doing better on wider models
+Trained models with an average throughput of 24.454581
+Trained models at an average time of 40.866 seconds
+Model 1 stats: Time taken: 28.239 seconds, Loss value: 966.509
+Model 2 stats: Time taken: 24.933 seconds, Loss value: 732.629
+Model 3 stats: Time taken: 25.145 seconds, Loss value: 804.955
+Model 4 stats: Time taken: 30.565 seconds, Loss value: 727.075
+Model 5 stats: Time taken: 38.075 seconds, Loss value: 749.385
+Model 6 stats: Time taken: 48.607 seconds, Loss value: 852.541
+Model 7 stats: Time taken: 50.306 seconds, Loss value: 852.214
+Model 8 stats: Time taken: 55.584 seconds, Loss value: 902.778
+Model 9 stats: Time taken: 60.663 seconds, Loss value: 1151.682
+Model 10 stats: Time taken: 65.919 seconds, Loss value: 1150.963
+Model 11 stats: Time taken: 24.625 seconds, Loss value: 674.633
+Model 12 stats: Time taken: 24.847 seconds, Loss value: 617.159
+Model 13 stats: Time taken: 25.726 seconds, Loss value: 606.477
+Model 14 stats: Time taken: 32.640 seconds, Loss value: 566.784
+Model 15 stats: Time taken: 37.984 seconds, Loss value: 590.729
+Model 16 stats: Time taken: 29.991 seconds, Loss value: 1055.854
+Model 17 stats: Time taken: 30.329 seconds, Loss value: 965.328
+Model 18 stats: Time taken: 30.178 seconds, Loss value: 992.295
+Model 19 stats: Time taken: 35.499 seconds, Loss value: 956.919
+Model 20 stats: Time taken: 43.565 seconds, Loss value: 1139.789
+Model 21 stats: Time taken: 54.319 seconds, Loss value: 1137.847
+Model 22 stats: Time taken: 55.855 seconds, Loss value: 1151.514
+Model 23 stats: Time taken: 61.021 seconds, Loss value: 1151.118
+Model 24 stats: Time taken: 66.462 seconds, Loss value: 1151.826
+Model 25 stats: Time taken: 71.953 seconds, Loss value: 1151.610
+Model 26 stats: Time taken: 30.304 seconds, Loss value: 936.803
+Model 27 stats: Time taken: 30.150 seconds, Loss value: 906.943
+Model 28 stats: Time taken: 30.375 seconds, Loss value: 904.646
+Model 29 stats: Time taken: 38.212 seconds, Loss value: 895.794
+Model 30 stats: Time taken: 43.902 seconds, Loss value: 949.094
 
-Trained models with an average throughput of 18.883078
-Trained models at an average time of 52.957 seconds
-Model 1 stats: Time taken: 19.366 seconds, Loss value: 947.540
-Model 2 stats: Time taken: 20.304 seconds, Loss value: 762.926
-Model 3 stats: Time taken: 19.453 seconds, Loss value: 822.485
-Model 4 stats: Time taken: 26.359 seconds, Loss value: 718.396
-Model 5 stats: Time taken: 29.558 seconds, Loss value: 758.594
-Model 6 stats: Time taken: 31.722 seconds, Loss value: 829.797
-Model 7 stats: Time taken: 46.052 seconds, Loss value: 861.724
-Model 8 stats: Time taken: 47.935 seconds, Loss value: 944.168
-Model 9 stats: Time taken: 50.229 seconds, Loss value: 1151.996
-Model 10 stats: Time taken: 51.695 seconds, Loss value: 1151.478
-Model 11 stats: Time taken: 22.842 seconds, Loss value: 672.778
-Model 12 stats: Time taken: 35.997 seconds, Loss value: 637.372
-Model 13 stats: Time taken: 37.604 seconds, Loss value: 658.133
-Model 14 stats: Time taken: 162.197 seconds, Loss value: 585.431
-Model 15 stats: Time taken: 101.224 seconds, Loss value: 611.642
-Model 16 stats: Time taken: 27.235 seconds, Loss value: 1057.147
-Model 17 stats: Time taken: 28.738 seconds, Loss value: 949.245
-Model 18 stats: Time taken: 27.951 seconds, Loss value: 996.854
-Model 19 stats: Time taken: 36.632 seconds, Loss value: 982.970
-Model 20 stats: Time taken: 38.904 seconds, Loss value: 1042.490
-Model 21 stats: Time taken: 40.789 seconds, Loss value: 1127.953
-Model 22 stats: Time taken: 57.087 seconds, Loss value: 1152.112
-Model 23 stats: Time taken: 58.189 seconds, Loss value: 1151.836
-Model 24 stats: Time taken: 60.262 seconds, Loss value: 1151.348
-Model 25 stats: Time taken: 61.717 seconds, Loss value: 1151.613
-Model 26 stats: Time taken: 32.343 seconds, Loss value: 932.099
-Model 27 stats: Time taken: 49.035 seconds, Loss value: 886.731
-Model 28 stats: Time taken: 50.498 seconds, Loss value: 907.535
-Model 29 stats: Time taken: 197.464 seconds, Loss value: 901.640
-Model 30 stats: Time taken: 119.341 seconds, Loss value: 945.179
 
 
 
 Hardware: Intel(R) Core(TM) i7-9700F CPU @ 3.00 GHz 3.00 GHz
-
-Time for model:  88890
+Seems to be doing better on deeper models
 Trained models with an average throughput of 24.921083
 Trained models at an average time of 40.100 seconds
 Model 1 stats: Time taken: 12.247 seconds, Loss value: 994.131
