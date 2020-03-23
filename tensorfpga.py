@@ -1,4 +1,8 @@
 
+import socket
+
+
+
 # Given a det of data pipelines and connectivity to a worker finder, produce
 # an allocation of boards to data pipelines.
 # This algorithm works as follows:
@@ -86,3 +90,37 @@ def train_models(dpm, data):
                 if i % 2000 == 0:
                     loss = dp.retrieve('loss')
                     print(loss)
+
+
+#Using UPD, send out broadcast to detect what boards are available
+def send_request(port):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    server_address = ("localhost", 10000)
+    message = "This is the message.  It will be repeated."
+
+    # Send data
+    print("Sending out msg: ", message)
+    sent = sock.sendto(message.encode(), server_address)
+
+    # Receive response
+    print("Waiting to receive msg from server")
+    while True:
+        data, server = sock.recvfrom(4096)
+        if(data):
+            print("Received message from server: ", data)
+            break;
+
+    print("Exiting out of client")
+    
+
+#Actually sending data over to a specific board
+def send_data(board):
+    return "hi"
+
+def main():
+    send_request(111)
+
+
+if __name__ == '__main__':
+    main()
