@@ -9,14 +9,16 @@ import socket
 
 
 #Hosts server, waits for incoming call
-def main():
+def main(IP, PORT):
     responseGood = "Board #1 is available"
     responseBad = "Board #1 is not available"
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-    server_address = ("localhost", 10000)
-    print('starting up on {} port {}'.format(*server_address))
-    sock.bind(server_address)
+    #Set up server on board side
+    board_1 = (IP, PORT)
+    sock.bind(board_1)
+
+    print('starting up on {} port {}'.format(*board_1))
 
     while True:
         print("Listening for message")
@@ -24,7 +26,7 @@ def main():
 
         print("Received broadcast: ", data)
 
-        sock.sendto(responseGood.encode(),server_address)
+        sock.sendto(responseGood.encode(),address)
         print("Sent response: ", responseGood)
         break;
     print("Exiting out of server")
@@ -33,4 +35,6 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    IP = "localhost"
+    PORT = 18500
+    main(IP,PORT)
