@@ -2,6 +2,7 @@
 
 
 from benchmark import bench_suite
+from torchsummary import summary
 
 import torch
 import torchvision
@@ -51,6 +52,7 @@ def main(device):
 
             #net = model()
             net = model().to(device)
+            summary(net, (1,32,32))
             
 
             criterion = nn.CrossEntropyLoss()
