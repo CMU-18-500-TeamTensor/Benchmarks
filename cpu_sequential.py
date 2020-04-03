@@ -1,4 +1,5 @@
 from benchmark import bench_suite
+from torchsummary import summary 
 
 import torch
 import torchvision
@@ -20,14 +21,6 @@ trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
 trainloader = torch.utils.data.DataLoader(trainset, batch_size=4,
                                           shuffle=True, num_workers=2)
 
-testset = torchvision.datasets.CIFAR10(root='./data', train=False,
-                                       download=True, transform=transform)
-testloader = torch.utils.data.DataLoader(testset, batch_size=4,
-                                         shuffle=False, num_workers=2)
-
-classes = ('plane', 'car', 'bird', 'cat',
-           'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
-
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -41,11 +34,13 @@ statistics = []
 for data_pipeline in bench_suite.keys():
     pipeline_fn, models = bench_suite[data_pipeline]
     for model in models:
+        print("Starting a new model, statistics below: ")
         time_to_train = now()
         num_models_trained += 1
         # Train this model
 
         net = model()
+        summary(net, (3,32,32))
 
         criterion = nn.CrossEntropyLoss()
         optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
