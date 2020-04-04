@@ -3,6 +3,14 @@ import socket
 
 
 
+class DataPipeLineManager:
+    boards = 0
+    def __init__(self, boards):
+        self.boards = boards
+    def printNumBoards(self):
+        print("Current connected boards: ", self.boards)
+
+
 # Given a det of data pipelines and connectivity to a worker finder, produce
 # an allocation of boards to data pipelines.
 # This algorithm works as follows:
@@ -119,10 +127,64 @@ def get_boards(IP, PORT):
 def send_data(board):
     return "hi"
 
+#Note: can we assume that all of our tensors will be 4 dimensions?
+#Note: Current only works for 4 dimension tensor
+#Returns serialized tensor in list format
+#This is kinda ugly, should clean this up, make it more efficient
+def tensor_serializer(tensor, maxDim):
+    print("Starting tensor_serialization")
+    #Resulting serialization, one dimension linear
+    tensorList = []
+    tensorList.append(maxDim)
+    tensorList.append(len(tensor))
+    if(maxDim == 1):
+        tensorList.append(len(tensor[0]))
+        for j in range(len(tensor[0])):
+            for i in range(len(tensor)):
+                tensorList.append(tensor[i][j])
+    elif (maxDim == 3):
+        tensorList.append(len(tensor[0]))
+        tensorList.append(len(tensor[0][0]))
+        for k in range(len(tensor[0][0])):
+            for j in range(len(tensor[0])):
+                for i in range(len(tensor)):
+                    tensorList.append(tensor[i][j][k])
+    
+    elif (maxDim == 4):
+        tensorList.append(len(tensor[0]))
+        tensorList.append(len(tensor[0][0]))
+        tensorList.append(len(tensor[0][0][0]))
+        for l in range(len(tensor[0][0][0])):
+            for k in range(len(tensor[0][0])):
+                for j in range(len(tensor[0])):
+                    for i in range(len(tensor)):
+                        tensorList.append(tensor[i][j][k][l])
+    
+    return tensorList
+
 def main():
     IP = "localhost"
     PORT = 18500
-    get_boards(IP, PORT)
+    my1DTensor = [[1,2],[3,4],[5,6]]
+
+    my3DTensor = [[[1,2],[3,4],[5,6]],
+                [[7,8],[9,10],[11,12]],
+                [[13,14],[15,16],[17,18]],
+                [[19,20],[21,22],[23,24]]]
+    
+    my4DTensor = [[[[1,2],[3,4],[5,6]],
+                [[7,8],[9,10],[11,12]],
+                [[13,14],[15,16],[17,18]],
+                [[19,20],[21,22],[23,24]]],
+                [[[25,26],[27,28],[29,30]],
+                [[31,32],[33,34],[35,36]],
+                [[37,38],[39,40],[41,42]],
+                [[43,44],[45,46],[47,48]]]]
+
+    tensorList = tensor_serializer(my4DTensor, 4)
+    print("What is tensorList: ", tensorList)
+
+    #get_boards(IP, PORT)
 
 
 if __name__ == '__main__':
