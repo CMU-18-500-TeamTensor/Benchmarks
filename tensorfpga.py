@@ -2,13 +2,39 @@
 import socket
 
 
+class Worker:
+    name = "Worker Name 1"
+    data_pipeline = ""
+    model_list = [] #Holds all models currently assigned to it
+    def __init__(self, name):
+        self.name = name
 
-class DataPipeLineManager:
-    boards = 0
+    def assign_pipeline(self,pipeline):
+        self.data_pipeline = pipeline
+
+    def add_model(self,model):
+        self.model_list.append(model)
+
+
+
+class DataPipelineManager:
+    boards = 0 #total boards
+    pipelines = 0 #total pipelines
+    worker_list = [] #list of all workers, 
     def __init__(self, boards):
         self.boards = boards
+
     def printNumBoards(self):
         print("Current connected boards: ", self.boards)
+
+    def add_worker(self,name):
+        self.worker_list.append(name)
+
+    def add_pipeline(self, dp, pipeline_name, buffer_size):
+        self.pipelines+=1
+        return self.pipelines
+
+
 
 
 # Given a det of data pipelines and connectivity to a worker finder, produce
@@ -124,8 +150,11 @@ def get_boards(IP, PORT):
     
 
 #Actually sending data over to a specific board
-def send_data(board):
+def send_model(board):
     return "hi"
+
+def send_data(board):
+    return "hello"
 
 #Note: can we assume that all of our tensors will be 4 dimensions?
 #Note: Current only works for 4 dimension tensor

@@ -8,6 +8,10 @@ import socket
 
 
 
+def read_model(IP,PORT):
+    return "implement me"
+
+
 #Hosts server, waits for incoming call
 def main(IP, PORT):
     responseGood = "Board #1 is available"
