@@ -1,6 +1,11 @@
-# This file contains example code that a user would write to train a set of
-# models on a given data set and retrieve metrics.
+'''
+This file contains code that will be used for the mid semester demo.
+The code below will be used to show that the three subsystems have been connected
+together. In this scenario we will only be using one model, and will only be passing the 
+model to one connected board. The model that we use in this scenario is FC_M14.
 
+
+'''
 # Anything from the tensorfpga library is written by us, and not by the
 # end user.
 from tensorfpga import DataPipelineManager

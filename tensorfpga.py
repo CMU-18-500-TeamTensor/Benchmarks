@@ -15,6 +15,9 @@ class Worker:
     def add_model(self,model):
         self.model_list.append(model)
 
+    def get_pipeline(self):
+        return self.data_pipeline
+
 
 
 class DataPipelineManager:
@@ -30,8 +33,10 @@ class DataPipelineManager:
     def add_worker(self,name):
         self.worker_list.append(name)
 
+    #Adds a pipeline to a worker
     def add_pipeline(self, dp, pipeline_name, buffer_size):
         self.pipelines+=1
+
         return self.pipelines
 
 
