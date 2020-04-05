@@ -9,6 +9,8 @@ model to one connected board. The model that we use in this scenario is FC_M14.
 # Anything from the tensorfpga library is written by us, and not by the
 # end user.
 from tensorfpga import DataPipelineManager
+from tensorfpga import train_models
+
 
 # Anything from userprovided library is written by the end user.
 #from userprovided import get_CIFAR10_dataset
@@ -42,9 +44,10 @@ def dp1(x):
 def dp2(x):
     return x
 
+
 #going to be testing this on full color model 14
 def main():
-	dpm = DataPipelineManager(4)
+	dpm = DataPipelineManager(1)
 
 	# add_pipeline() returns the int ID of the data pipeline, as seen by the
 	# FPGA
@@ -52,17 +55,24 @@ def main():
 	# buffer.
 	#dp1_id = dpm.add_pipeline(dp1, name="grayscale", buffer_size=10)
 	#dp2_id = dpm.add_pipeline(dp2, name="full_color", buffer_size=10)
-	dp_id = dpm.add_pipeline(dp2, "full_color", 10)
 
 	#user function to pull dataset
 	data = get_CIFAR10_dataset() # iterable over tuples (x, y)
 
+	#grab the whole model list, in this scenario just one model
 	model_list = bench_suite
-	print("What is model_list", model_list)
-	#dpm.pipelines[dp1_id].add_model(model_list[0])
-	
 
-	#train_models(dpm, data)
+	pipeline_fn, model1 = model_list["full_color"]
+	dp_id = dpm.add_pipeline(pipeline_fn, "full_color", 10)
+	
+	print("What is model1: ", model1)
+	#User specificed which model goes to which pipeline
+	#In this scenario, we are adding Full Color Model 14 to the full color pipeline
+	dpm.add_model(model1, dp_id)
+	
+	#Once all the models have been added to their respective pipelines and the data
+	#has been pulled, we begin training the models
+	train_models(dpm, data)
 
 	# Retrieve accuracy from each metric
 	#for model in dpm.pipelines[dp1_id].models:

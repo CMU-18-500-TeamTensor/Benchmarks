@@ -23,12 +23,10 @@ class Worker:
 class DataPipelineManager:
     boards = 0 #total boards
     pipelines = 0 #total pipelines
-    worker_list = [] #list of all workers, 
-    def __init__(self, boards):
+    worker_list = [] #list of all workers
+    pipeline_list = [] #list of all pipelines
+    def __init__(self,boards):
         self.boards = boards
-
-    def printNumBoards(self):
-        print("Current connected boards: ", self.boards)
 
     def add_worker(self,name):
         self.worker_list.append(name)
@@ -36,8 +34,22 @@ class DataPipelineManager:
     #Adds a pipeline to a worker
     def add_pipeline(self, dp, pipeline_name, buffer_size):
         self.pipelines+=1
+        m_list = []
+        self.pipeline_list.append((pipeline_name,dp,m_list))
+        return self.pipelines-1
 
-        return self.pipelines
+    def add_model(self, model, dp_id):
+        self.pipeline_list[dp_id][2].append(model)
+
+
+    def printNumBoards(self):
+        print("Current connected boards: ", self.boards)
+
+    def print_pipelines(self):
+        print("What are the pipelines", self.pipeline_list)
+
+    def print_boards(self):
+        print("what is the current worker list: ", self.worker_list)
 
 
 
@@ -83,7 +95,7 @@ def allocate_boards(dpm):
     # pipelines are distributed equitably across boards
 
 
-
+'''
 # Given a Data Pipeline Manager, find the available boards and train all of
 # the models on those boards.
 def train_models(dpm, data):
@@ -129,9 +141,10 @@ def train_models(dpm, data):
                 if i % 2000 == 0:
                     loss = dp.retrieve('loss')
                     print(loss)
-
+'''
 
 #Using UPD, send out broadcast to detect what boards are available
+#Returns a lit of available boards
 def get_boards(IP, PORT):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
@@ -152,6 +165,7 @@ def get_boards(IP, PORT):
             break;
 
     print("Exiting out of client")
+    return ["DE0-Nano_1"]
     
 
 #Actually sending data over to a specific board
@@ -160,6 +174,22 @@ def send_model(board):
 
 def send_data(board):
     return "hello"
+
+def train_models(dpm,data):
+    IP = "localhost"
+    PORT = 18500
+    dpm.print_pipelines
+
+    #Get all available boards and add to board list
+    board_list = get_boards(IP,PORT)
+    for i in range (len(board_list)):
+        dpm.add_worker(board_list[i])
+    
+    dpm.print_boards()
+
+    
+
+
 
 #Note: can we assume that all of our tensors will be 4 dimensions?
 #Note: Current only works for 4 dimension tensor
