@@ -2,6 +2,11 @@
 import socket
 
 
+'''
+Each worker will be assigned a pipeline,
+everything from a specific pipeline will be added to the 
+worker's model list
+'''
 class Worker:
     name = "Worker Name 1"
     data_pipeline = ""
@@ -18,6 +23,12 @@ class Worker:
     def get_pipeline(self):
         return self.data_pipeline
 
+    def get_model_list(self):
+        return self.model_list
+
+    def get_worker_name(self):
+        return self.name
+
 
 
 class DataPipelineManager:
@@ -29,7 +40,8 @@ class DataPipelineManager:
         self.boards = boards
 
     def add_worker(self,name):
-        self.worker_list.append(name)
+        new_worker = Worker(name)
+        self.worker_list.append(new_worker)
 
     #Adds a pipeline to a worker
     def add_pipeline(self, dp, pipeline_name, buffer_size):
@@ -42,7 +54,11 @@ class DataPipelineManager:
         self.pipeline_list[dp_id][2].append(model)
 
     def add_pipeline_to_worker(self):
-        self.worker_list.append(pipeline_list[0])
+        self.worker_list[0].assign_pipeline("Full Color")
+        self.worker_list[0].add_model(self.pipeline_list[0][2])
+
+    def get_model(self,board):
+        return self.worker_list[0].model_list[0]
 
     def printNumBoards(self):
         print("Current connected boards: ", self.boards)
@@ -52,6 +68,9 @@ class DataPipelineManager:
 
     def print_boards(self):
         print("what is the current worker list: ", self.worker_list)
+
+    def print_worker_list(self, index):
+        print("What is the model list for worker with index", self.worker_list[index].get_model_list())
 
 
 
@@ -98,10 +117,10 @@ def allocate_boards(dpm):
     # pipelines are distributed equitably across boards
 
 
-'''
+
 # Given a Data Pipeline Manager, find the available boards and train all of
 # the models on those boards.
-def train_models(dpm, data):
+def train_modells(dpm, data):
 
     # For each data pipeline
     for dp in dpm:
@@ -144,7 +163,7 @@ def train_models(dpm, data):
                 if i % 2000 == 0:
                     loss = dp.retrieve('loss')
                     print(loss)
-'''
+
 
 #Using UPD, send out broadcast to detect what boards are available
 #Returns a lit of available boards
@@ -173,7 +192,70 @@ def get_boards(IP, PORT):
 
 #Actually sending data over to a specific board
 def send_model(board):
-    return "hi"
+    #Int tensor to use for verification purposes
+    kernelTensor = [[[[1,2],[3,4],[5,6]],
+                [[7,8],[9,10],[11,12]],
+                [[13,14],[15,16],[17,18]],
+                [[19,20],[21,22],[23,24]]],
+                [[[25,26],[27,28],[29,30]],
+                [[31,32],[33,34],[35,36]],
+                [[37,38],[39,40],[41,42]],
+                [[43,44],[45,46],[47,48]]]]
+
+    linear_tensor = [[1,2],[3,4],[5,6]]
+
+    biasTensor = [1,2,3]
+
+    packet_str = ""
+    layer_list = ["2D Convolution", "ReLU", "MaxPool", "Flatten", "Linear1", "ReLU", "Linear2"]
+    packet_str += "5,0,14,"
+    packet_str += (str(len(layer_list)) + ",")
+    print("What is packet_str: ", packet_str)
+    for layer in layer_list:
+        if(layer == "2D Convolution"):
+            #Opcode + parameters
+            packet_str += "2,0,1,18,19,"
+            #kernel 
+            serializedTensor = tensor_serializer(kernelTensor,4)
+            for i in serializedTensor:
+                packet_str += (str(i) + ",")
+
+            serializedBias = tensor_serializer(biasTensor,1)
+            for i in serializedBias:
+                packet_str += (str(i) + ",")
+        elif(layer == "ReLU"): 
+            packet_str += "3,"
+        elif(layer == "MaxPool"):
+            packet_str += "4,0,2,width,height,2,"
+        elif(layer == "Flatten"):
+            packet_str += "5,"
+        elif(layer == "Linear1"):
+            packet_str += "1,"
+            serializedTensor = tensor_serializer(linear_tensor,2)
+            for i in serializedTensor:
+                packet_str += (str(i) + ",")
+        elif(layer == "Linear2"):
+            packet_str += "1,"
+            serializedTensor = tensor_serializer(linear_tensor,2)
+            for i in serializedTensor:
+                packet_str += (str(i) + ",")
+
+
+    print("Final packet_str: ", packet_str)
+
+    
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    
+    board_1 = ("localhost", 18500)
+    message = packet_str
+
+    # Send data
+    print("Sending out msg: ", message)
+    sent = sock.sendto(message.encode(), board_1)
+
+    
+
 
 def send_data(board):
     return "hello"
@@ -184,27 +266,17 @@ def train_models(dpm,data):
 
     #Get all available boards and add to board list
     board_list = get_boards(IP,PORT)
+    print("what is board_list:", board_list)
     for i in range (len(board_list)):
         dpm.add_worker(board_list[i])
     
     dpm.print_boards()
     dpm.print_pipelines()
     dpm.add_pipeline_to_worker()
-    dpm.print_boards()
-
-    #Data source assigns pipeline to worker
-
-    #Data source assigns worker model to worker
-
-    #Data source probes worker to learn the # of model managers remaining
-
-    #Data source probes worker 
-
-    #sends model
-
-
-    #sends data
-
+    dpm.print_worker_list(0)
+    model = dpm.get_model(0)
+    print("what is the model that we got: ", model)
+    send_model(model)
 
     
 
@@ -221,10 +293,16 @@ def tensor_serializer(tensor, maxDim):
     tensorList.append(maxDim)
     tensorList.append(len(tensor))
     if(maxDim == 1):
+        for i in range(len(tensor)):
+            tensorList.append(tensor[i])
+        
+
+    elif (maxDim == 2):
         tensorList.append(len(tensor[0]))
         for j in range(len(tensor[0])):
             for i in range(len(tensor)):
                 tensorList.append(tensor[i][j])
+
     elif (maxDim == 3):
         tensorList.append(len(tensor[0]))
         tensorList.append(len(tensor[0][0]))
@@ -248,7 +326,9 @@ def tensor_serializer(tensor, maxDim):
 def main():
     IP = "localhost"
     PORT = 18500
-    my1DTensor = [[1,2],[3,4],[5,6]]
+    my1DTensor = [1,2,3]
+
+    my2DTensor = [[1,2],[3,4],[5,6]]
 
     my3DTensor = [[[1,2],[3,4],[5,6]],
                 [[7,8],[9,10],[11,12]],
@@ -264,7 +344,7 @@ def main():
                 [[37,38],[39,40],[41,42]],
                 [[43,44],[45,46],[47,48]]]]
 
-    tensorList = tensor_serializer(my4DTensor, 4)
+    tensorList = tensor_serializer(my2DTensor, 2)
     print("What is tensorList: ", tensorList)
 
     #get_boards(IP, PORT)

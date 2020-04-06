@@ -8,12 +8,7 @@ import socket
 
 
 
-def read_model(IP,PORT):
-    return "implement me"
-
-
-#Hosts server, waits for incoming call
-def main(IP, PORT):
+def read_content(IP,PORT):
     responseGood = "Board #1 is available"
     responseBad = "Board #1 is not available"
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -23,17 +18,33 @@ def main(IP, PORT):
     sock.bind(board_1)
 
     print('starting up on {} port {}'.format(*board_1))
+    
+    print("Listening for message")
+    data, address = sock.recvfrom(4096)
 
-    while True:
-        print("Listening for message")
-        data, address = sock.recvfrom(4096)
+    print("Received broadcast: ", data)
 
-        print("Received broadcast: ", data)
+    sock.sendto(responseGood.encode(),address)
+    print("Sent response: ", responseGood)
 
-        sock.sendto(responseGood.encode(),address)
-        print("Sent response: ", responseGood)
-        break;
-    print("Exiting out of server")
+    print("Listening for packet")
+    data, address = sock.recvfrom(4096)
+
+    print("Received packet: ", data)
+
+    '''
+    print("Listening for batch")
+    data, address = sock.recvfrom(4096)
+
+    print("Received packet: ", data)
+    '''
+    
+
+#Hosts server, waits for incoming call
+def main(IP, PORT):
+    read_content(IP,PORT)
+
+    print("Server finished")
     
 
 
