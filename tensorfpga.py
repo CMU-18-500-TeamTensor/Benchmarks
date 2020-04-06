@@ -41,6 +41,8 @@ class DataPipelineManager:
     def add_model(self, model, dp_id):
         self.pipeline_list[dp_id][2].append(model)
 
+    def add_pipeline_to_worker(self):
+        self.worker_list.append(pipeline_list[0])
 
     def printNumBoards(self):
         print("Current connected boards: ", self.boards)
@@ -50,6 +52,7 @@ class DataPipelineManager:
 
     def print_boards(self):
         print("what is the current worker list: ", self.worker_list)
+
 
 
 
@@ -178,7 +181,6 @@ def send_data(board):
 def train_models(dpm,data):
     IP = "localhost"
     PORT = 18500
-    dpm.print_pipelines
 
     #Get all available boards and add to board list
     board_list = get_boards(IP,PORT)
@@ -186,6 +188,23 @@ def train_models(dpm,data):
         dpm.add_worker(board_list[i])
     
     dpm.print_boards()
+    dpm.print_pipelines()
+    dpm.add_pipeline_to_worker()
+    dpm.print_boards()
+
+    #Data source assigns pipeline to worker
+
+    #Data source assigns worker model to worker
+
+    #Data source probes worker to learn the # of model managers remaining
+
+    #Data source probes worker 
+
+    #sends model
+
+
+    #sends data
+
 
     
 
