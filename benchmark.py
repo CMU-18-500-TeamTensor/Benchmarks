@@ -419,12 +419,16 @@ class FC_M13(nn.Module):
     def model_string(self):
         return "Full Color pipeline model 13"
 
+
+#NOTE: the relu layer has to be defined in the constructor otherwise 
+#tensorfpga will not be able to corretly count the number of layers
 class FC_M14(nn.Module):
     def __init__(self):
         super(FC_M14, self).__init__()
         self.conv = nn.Conv2d(3, 30, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
+        self.relu = nn.ReLU()
 
         # Calculate the output size of the Flatten Layer
         # conv_dimensions(c_in, h_in, w_in, c_out, stride, pad, k_height, k_width)
@@ -436,9 +440,11 @@ class FC_M14(nn.Module):
         self.fc2 = nn.Linear(500, 10)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv(x)))
+        #x = self.pool(F.relu(self.conv(x)))
+        x = self.pool(self.relu(self.conv(x)))
         x = self.flatten(x)
-        x = F.relu(self.fc1(x))
+        #x = F.relu(self.fc1(x))
+        x = self.relu(self.fc1(x))
         x = self.fc2(x)
         return x
 
@@ -943,15 +949,15 @@ class G_M15(nn.Module):
     DP<->Model relationships
 
 """
-bench_suite = {"full_color": (full_color, [FC_M14])}
+#bench_suite = {"full_color": (full_color, [FC_M14])}
 #bench_suite = {"grayscale": (grayscale, [G_M14])}
 
 
 
-"""
+
 bench_suite = {"full_color": (full_color, [FC_M1, FC_M2, FC_M3, FC_M4, FC_M5, FC_M6, FC_M7, FC_M8, FC_M9, FC_M10, FC_M11, FC_M12, FC_M13, FC_M14, FC_M15]), 
             "grayscale":  (grayscale,  [G_M1,  G_M2,  G_M3,  G_M4,  G_M5,  G_M6, G_M7,  G_M8,  G_M9,  G_M10,  G_M11,  G_M12,  G_M13,  G_M14,  G_M15])}
-            """
+            
                
                
                
