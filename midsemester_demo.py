@@ -62,13 +62,17 @@ def main():
 	#grab the whole model list, in this scenario just one model
 	model_list = bench_suite
 
-	pipeline_fn, model1 = model_list["full_color"]
+	pipeline_fn, models = model_list["full_color"]
 	dp_id = dpm.add_pipeline(pipeline_fn, "full_color", 10)
 	
-	print("What is model1: ", model1)
+	model1 = models[0]
+	model2 = models[13]
+	print("What is model 1: ", model1)
+	print("What is model 2: ", model2)
 	#User specificed which model goes to which pipeline
 	#In this scenario, we are adding Full Color Model 14 to the full color pipeline
 	dpm.add_model(model1, dp_id)
+	dpm.add_model(model2, dp_id)
 	
 	#Once all the models have been added to their respective pipelines and the data
 	#has been pulled, we begin training the models
