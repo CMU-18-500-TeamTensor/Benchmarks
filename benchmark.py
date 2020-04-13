@@ -43,6 +43,8 @@ class FC_M1(nn.Module):
         self.conv = nn.Conv2d(3, 1, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
+        self.relu = nn.ReLU()
+
 
         # Calculate the output size of the Flatten Layer
         # conv_dimensions(c_in, h_in, w_in, c_out, stride, pad, k_height, k_width)
@@ -53,7 +55,7 @@ class FC_M1(nn.Module):
         self.fc = nn.Linear(flatten_size, 10)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv(x)))
+        x = self.pool(self.relu(self.conv(x)))
         x = self.flatten(x)
         x = self.fc(x)
         return x
@@ -67,6 +69,7 @@ class FC_M2(nn.Module):
         self.conv = nn.Conv2d(3, 5, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
+        self.relu = nn.ReLU()
 
         # Calculate the output size of the Flatten Layer
         # conv_dimensions(c_in, h_in, w_in, c_out, stride, pad, k_height, k_width)
@@ -77,7 +80,7 @@ class FC_M2(nn.Module):
         self.fc = nn.Linear(flatten_size, 10)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv(x)))
+        x = self.pool(self.relu(self.conv(x)))
         x = self.flatten(x)
         x = self.fc(x)
         return x
@@ -91,6 +94,7 @@ class FC_M3(nn.Module):
         self.conv = nn.Conv2d(3, 3, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
+        self.relu = nn.ReLU()
 
         # Calculate the output size of the Flatten Layer
         # conv_dimensions(c_in, h_in, w_in, c_out, stride, pad, k_height, k_width)
@@ -101,7 +105,7 @@ class FC_M3(nn.Module):
         self.fc = nn.Linear(flatten_size, 10)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv(x)))
+        x = self.pool(self.relu(self.conv(x)))
         x = self.flatten(x)
         x = self.fc(x)
         return x
@@ -115,6 +119,7 @@ class FC_M4(nn.Module):
         self.conv = nn.Conv2d(3, 5, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
+        self.relu = nn.ReLU()
 
         # Calculate the output size of the Flatten Layer
         # conv_dimensions(c_in, h_in, w_in, c_out, stride, pad, k_height, k_width)
@@ -126,9 +131,9 @@ class FC_M4(nn.Module):
         self.fc2 = nn.Linear(50, 10)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv(x)))
+        x = self.pool(self.relu(self.conv(x)))
         x = self.flatten(x)
-        x = F.relu(self.fc1(x))
+        x = self.relu(self.fc1(x))
         x = self.fc2(x)
         return x
 
@@ -142,6 +147,7 @@ class FC_M5(nn.Module):
         self.conv2 = nn.Conv2d(5, 6, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
+        self.relu = nn.ReLU()
 
         # Calculate the output size of the Flatten Layer
         # conv_dimensions(c_in, h_in, w_in, c_out, stride, pad, k_height, k_width)
@@ -155,10 +161,10 @@ class FC_M5(nn.Module):
         self.fc2 = nn.Linear(50, 10)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
+        x = self.pool(self.relu(self.conv1(x)))
+        x = self.pool(self.relu(self.conv2(x)))
         x = self.flatten(x)
-        x = F.relu(self.fc1(x))
+        x = self.relu(self.fc1(x))
         x = self.fc2(x)
         return x
 
@@ -172,6 +178,7 @@ class FC_M6(nn.Module):
         self.conv2 = nn.Conv2d(3, 6, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
+        self.relu = nn.ReLU()
 
         # Calculate the output size of the Flatten Layer
         # conv_dimensions(c_in, h_in, w_in, c_out, stride, pad, k_height, k_width)
@@ -187,12 +194,12 @@ class FC_M6(nn.Module):
         self.fc4 = nn.Linear(50, 10)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
+        x = self.pool(self.relu(self.conv1(x)))
+        x = self.pool(self.relu(self.conv2(x)))
         x = self.flatten(x)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = F.relu(self.fc3(x))
+        x = self.relu(self.fc1(x))
+        x = self.relu(self.fc2(x))
+        x = self.relu(self.fc3(x))
         x = self.fc4(x)
         return x
 
@@ -208,6 +215,7 @@ class FC_M7(nn.Module):
         self.conv4 = nn.Conv2d(6, 6, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
+        self.relu = nn.ReLU()
 
         # Calculate the output size of the Flatten Layer
         # conv_dimensions(c_in, h_in, w_in, c_out, stride, pad, k_height, k_width)
@@ -223,10 +231,10 @@ class FC_M7(nn.Module):
         self.fc2 = nn.Linear(50, 10)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv2(F.relu(self.conv1(x)))))
-        x = self.pool(F.relu(self.conv4(F.relu(self.conv3(x)))))
+        x = self.pool(self.relu(self.conv2(self.relu(self.conv1(x)))))
+        x = self.pool(self.relu(self.conv4(self.relu(self.conv3(x)))))
         x = self.flatten(x)
-        x = F.relu(self.fc1(x))
+        x = self.relu(self.fc1(x))
         x = self.fc2(x)
         return x
 
@@ -242,6 +250,7 @@ class FC_M8(nn.Module):
         self.conv4 = nn.Conv2d(6, 6, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
+        self.relu = nn.ReLU()
 
         # Calculate the output size of the Flatten Layer
         # conv_dimensions(c_in, h_in, w_in, c_out, stride, pad, k_height, k_width)
@@ -258,11 +267,11 @@ class FC_M8(nn.Module):
         self.fc3 = nn.Linear(50, 10)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv2(F.relu(self.conv1(x)))))
-        x = self.pool(F.relu(self.conv4(F.relu(self.conv3(x)))))
+        x = self.pool(self.relu(self.conv2(self.relu(self.conv1(x)))))
+        x = self.pool(self.relu(self.conv4(self.relu(self.conv3(x)))))
         x = self.flatten(x)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
+        x = self.relu(self.fc1(x))
+        x = self.relu(self.fc2(x))
         x = self.fc3(x)
         return x
 
@@ -278,6 +287,7 @@ class FC_M9(nn.Module):
         self.conv4 = nn.Conv2d(6, 6, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
+        self.relu = nn.ReLU()
 
         # Calculate the output size of the Flatten Layer
         # conv_dimensions(c_in, h_in, w_in, c_out, stride, pad, k_height, k_width)
@@ -295,12 +305,12 @@ class FC_M9(nn.Module):
         self.fc4 = nn.Linear(50, 10)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv2(F.relu(self.conv1(x)))))
-        x = self.pool(F.relu(self.conv4(F.relu(self.conv3(x)))))
+        x = self.pool(self.relu(self.conv2(self.relu(self.conv1(x)))))
+        x = self.pool(self.relu(self.conv4(self.relu(self.conv3(x)))))
         x = self.flatten(x)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = F.relu(self.fc3(x))
+        x = self.relu(self.fc1(x))
+        x = self.relu(self.fc2(x))
+        x = self.relu(self.fc3(x))
         x = self.fc4(x)
         return x
 
@@ -316,6 +326,7 @@ class FC_M10(nn.Module):
         self.conv4 = nn.Conv2d(6, 6, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
+        self.relu = nn.ReLU()
 
         # Calculate the output size of the Flatten Layer
         # conv_dimensions(c_in, h_in, w_in, c_out, stride, pad, k_height, k_width)
@@ -334,13 +345,13 @@ class FC_M10(nn.Module):
         self.fc5 = nn.Linear(50, 10)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv2(F.relu(self.conv1(x)))))
-        x = self.pool(F.relu(self.conv4(F.relu(self.conv3(x)))))
+        x = self.pool(self.relu(self.conv2(self.relu(self.conv1(x)))))
+        x = self.pool(self.relu(self.conv4(self.relu(self.conv3(x)))))
         x = self.flatten(x)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = F.relu(self.fc3(x))
-        x = F.relu(self.fc4(x))
+        x = self.relu(self.fc1(x))
+        x = self.relu(self.fc2(x))
+        x = self.relu(self.fc3(x))
+        x = self.relu(self.fc4(x))
         x = self.fc5(x)
         return x
 
@@ -353,6 +364,7 @@ class FC_M11(nn.Module):
         self.conv = nn.Conv2d(3, 10, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
+        self.relu = nn.ReLU()
 
         # Calculate the output size of the Flatten Layer
         # conv_dimensions(c_in, h_in, w_in, c_out, stride, pad, k_height, k_width)
@@ -363,7 +375,7 @@ class FC_M11(nn.Module):
         self.fc = nn.Linear(flatten_size, 10)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv(x)))
+        x = self.pool(self.relu(self.conv(x)))
         x = self.flatten(x)
         x = self.fc(x)
         return x
@@ -377,6 +389,7 @@ class FC_M12(nn.Module):
         self.conv = nn.Conv2d(3, 25, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
+        self.relu = nn.ReLU()
 
         # Calculate the output size of the Flatten Layer
         # conv_dimensions(c_in, h_in, w_in, c_out, stride, pad, k_height, k_width)
@@ -387,7 +400,7 @@ class FC_M12(nn.Module):
         self.fc = nn.Linear(flatten_size, 10)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv(x)))
+        x = self.pool(self.relu(self.conv(x)))
         x = self.flatten(x)
         x = self.fc(x)
         return x
@@ -401,6 +414,7 @@ class FC_M13(nn.Module):
         self.conv = nn.Conv2d(3, 30, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
+        self.relu = nn.ReLU()
 
         # Calculate the output size of the Flatten Layer
         # conv_dimensions(c_in, h_in, w_in, c_out, stride, pad, k_height, k_width)
@@ -411,7 +425,7 @@ class FC_M13(nn.Module):
         self.fc = nn.Linear(flatten_size, 10)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv(x)))
+        x = self.pool(self.relu(self.conv(x)))
         x = self.flatten(x)
         x = self.fc(x)
         return x
@@ -458,6 +472,7 @@ class FC_M15(nn.Module):
         self.conv2 = nn.Conv2d(30, 60, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
+        self.relu = nn.ReLU()
 
         # Calculate the output size of the Flatten Layer
         # conv_dimensions(c_in, h_in, w_in, c_out, stride, pad, k_height, k_width)
@@ -471,10 +486,10 @@ class FC_M15(nn.Module):
         self.fc2 = nn.Linear(500, 10)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
+        x = self.pool(self.relu(self.conv1(x)))
+        x = self.pool(self.relu(self.conv2(x)))
         x = self.flatten(x)
-        x = F.relu(self.fc1(x))
+        x = self.relu(self.fc1(x))
         x = self.fc2(x)
         return x
 
@@ -493,6 +508,7 @@ class G_M1(nn.Module):
         self.conv = nn.Conv2d(1, 1, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
+        self.relu = nn.ReLU()
 
         # Calculate the output size of the Flatten Layer
         # conv_dimensions(c_in, h_in, w_in, c_out, stride, pad, k_height, k_width)
@@ -503,7 +519,7 @@ class G_M1(nn.Module):
         self.fc = nn.Linear(flatten_size, 10)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv(x)))
+        x = self.pool(self.relu(self.conv(x)))
         x = self.flatten(x)
         x = self.fc(x)
         return x
@@ -517,6 +533,7 @@ class G_M2(nn.Module):
         self.conv = nn.Conv2d(1, 5, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
+        self.relu = nn.ReLU()
 
         # Calculate the output size of the Flatten Layer
         # conv_dimensions(c_in, h_in, w_in, c_out, stride, pad, k_height, k_width)
@@ -527,7 +544,7 @@ class G_M2(nn.Module):
         self.fc = nn.Linear(flatten_size, 10)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv(x)))
+        x = self.pool(self.relu(self.conv(x)))
         x = self.flatten(x)
         x = self.fc(x)
         return x
@@ -541,6 +558,7 @@ class G_M3(nn.Module):
         self.conv = nn.Conv2d(1, 3, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
+        self.relu = nn.ReLU()
 
         # Calculate the output size of the Flatten Layer
         # conv_dimensions(c_in, h_in, w_in, c_out, stride, pad, k_height, k_width)
@@ -551,7 +569,7 @@ class G_M3(nn.Module):
         self.fc = nn.Linear(flatten_size, 10)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv(x)))
+        x = self.pool(self.relu(self.conv(x)))
         x = self.flatten(x)
         x = self.fc(x)
         return x
@@ -565,6 +583,7 @@ class G_M4(nn.Module):
         self.conv = nn.Conv2d(1, 5, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
+        self.relu = nn.ReLU()
 
         # Calculate the output size of the Flatten Layer
         # conv_dimensions(c_in, h_in, w_in, c_out, stride, pad, k_height, k_width)
@@ -576,9 +595,9 @@ class G_M4(nn.Module):
         self.fc2 = nn.Linear(50, 10)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv(x)))
+        x = self.pool(self.relu(self.conv(x)))
         x = self.flatten(x)
-        x = F.relu(self.fc1(x))
+        x = self.relu(self.fc1(x))
         x = self.fc2(x)
         return x
 
@@ -592,6 +611,7 @@ class G_M5(nn.Module):
         self.conv2 = nn.Conv2d(5, 6, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
+        self.relu = nn.ReLU()
 
         # Calculate the output size of the Flatten Layer
         # conv_dimensions(c_in, h_in, w_in, c_out, stride, pad, k_height, k_width)
@@ -605,10 +625,10 @@ class G_M5(nn.Module):
         self.fc2 = nn.Linear(50, 10)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
+        x = self.pool(self.relu(self.conv1(x)))
+        x = self.pool(self.relu(self.conv2(x)))
         x = self.flatten(x)
-        x = F.relu(self.fc1(x))
+        x = self.relu(self.fc1(x))
         x = self.fc2(x)
         return x
 
@@ -622,6 +642,7 @@ class G_M6(nn.Module):
         self.conv2 = nn.Conv2d(3, 6, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
+        self.relu = nn.ReLU()
 
         # Calculate the output size of the Flatten Layer
         # conv_dimensions(c_in, h_in, w_in, c_out, stride, pad, k_height, k_width)
@@ -637,12 +658,12 @@ class G_M6(nn.Module):
         self.fc4 = nn.Linear(50, 10)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
+        x = self.pool(self.relu(self.conv1(x)))
+        x = self.pool(self.relu(self.conv2(x)))
         x = self.flatten(x)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = F.relu(self.fc3(x))
+        x = self.relu(self.fc1(x))
+        x = self.relu(self.fc2(x))
+        x = self.relu(self.fc3(x))
         x = self.fc4(x)
         return x
 
@@ -658,6 +679,7 @@ class G_M7(nn.Module):
         self.conv4 = nn.Conv2d(6, 6, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
+        self.relu = nn.ReLU()
 
         # Calculate the output size of the Flatten Layer
         # conv_dimensions(c_in, h_in, w_in, c_out, stride, pad, k_height, k_width)
@@ -673,10 +695,10 @@ class G_M7(nn.Module):
         self.fc2 = nn.Linear(50, 10)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv2(F.relu(self.conv1(x)))))
-        x = self.pool(F.relu(self.conv4(F.relu(self.conv3(x)))))
+        x = self.pool(self.relu(self.conv2(self.relu(self.conv1(x)))))
+        x = self.pool(self.relu(self.conv4(self.relu(self.conv3(x)))))
         x = self.flatten(x)
-        x = F.relu(self.fc1(x))
+        x = self.relu(self.fc1(x))
         x = self.fc2(x)
         return x
 
@@ -692,6 +714,7 @@ class G_M8(nn.Module):
         self.conv4 = nn.Conv2d(6, 6, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
+        self.relu = nn.ReLU()
 
         # Calculate the output size of the Flatten Layer
         # conv_dimensions(c_in, h_in, w_in, c_out, stride, pad, k_height, k_width)
@@ -708,11 +731,11 @@ class G_M8(nn.Module):
         self.fc3 = nn.Linear(50, 10)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv2(F.relu(self.conv1(x)))))
-        x = self.pool(F.relu(self.conv4(F.relu(self.conv3(x)))))
+        x = self.pool(self.relu(self.conv2(self.relu(self.conv1(x)))))
+        x = self.pool(self.relu(self.conv4(self.relu(self.conv3(x)))))
         x = self.flatten(x)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
+        x = self.relu(self.fc1(x))
+        x = self.relu(self.fc2(x))
         x = self.fc3(x)
         return x
 
@@ -728,6 +751,7 @@ class G_M9(nn.Module):
         self.conv4 = nn.Conv2d(6, 6, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
+        self.relu = nn.ReLU()
 
         # Calculate the output size of the Flatten Layer
         # conv_dimensions(c_in, h_in, w_in, c_out, stride, pad, k_height, k_width)
@@ -745,12 +769,12 @@ class G_M9(nn.Module):
         self.fc4 = nn.Linear(50, 10)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv2(F.relu(self.conv1(x)))))
-        x = self.pool(F.relu(self.conv4(F.relu(self.conv3(x)))))
+        x = self.pool(self.relu(self.conv2(self.relu(self.conv1(x)))))
+        x = self.pool(self.relu(self.conv4(self.relu(self.conv3(x)))))
         x = self.flatten(x)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = F.relu(self.fc3(x))
+        x = self.relu(self.fc1(x))
+        x = self.relu(self.fc2(x))
+        x = self.relu(self.fc3(x))
         x = self.fc4(x)
         return x
 
@@ -766,6 +790,7 @@ class G_M10(nn.Module):
         self.conv4 = nn.Conv2d(6, 6, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
+        self.relu = nn.ReLU()
 
         # Calculate the output size of the Flatten Layer
         # conv_dimensions(c_in, h_in, w_in, c_out, stride, pad, k_height, k_width)
@@ -784,13 +809,13 @@ class G_M10(nn.Module):
         self.fc5 = nn.Linear(50, 10)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv2(F.relu(self.conv1(x)))))
-        x = self.pool(F.relu(self.conv4(F.relu(self.conv3(x)))))
+        x = self.pool(self.relu(self.conv2(self.relu(self.conv1(x)))))
+        x = self.pool(self.relu(self.conv4(self.relu(self.conv3(x)))))
         x = self.flatten(x)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = F.relu(self.fc3(x))
-        x = F.relu(self.fc4(x))
+        x = self.relu(self.fc1(x))
+        x = self.relu(self.fc2(x))
+        x = self.relu(self.fc3(x))
+        x = self.relu(self.fc4(x))
         x = self.fc5(x)
         return x
 
@@ -803,6 +828,7 @@ class G_M11(nn.Module):
         self.conv = nn.Conv2d(1, 10, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
+        self.relu = nn.ReLU()
 
         # Calculate the output size of the Flatten Layer
         # conv_dimensions(c_in, h_in, w_in, c_out, stride, pad, k_height, k_width)
@@ -813,7 +839,7 @@ class G_M11(nn.Module):
         self.fc = nn.Linear(flatten_size, 10)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv(x)))
+        x = self.pool(self.relu(self.conv(x)))
         x = self.flatten(x)
         x = self.fc(x)
         return x
@@ -827,6 +853,7 @@ class G_M12(nn.Module):
         self.conv = nn.Conv2d(1, 25, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
+        self.relu = nn.ReLU()
 
         # Calculate the output size of the Flatten Layer
         # conv_dimensions(c_in, h_in, w_in, c_out, stride, pad, k_height, k_width)
@@ -837,7 +864,7 @@ class G_M12(nn.Module):
         self.fc = nn.Linear(flatten_size, 10)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv(x)))
+        x = self.pool(self.relu(self.conv(x)))
         x = self.flatten(x)
         x = self.fc(x)
         return x
@@ -851,6 +878,7 @@ class G_M13(nn.Module):
         self.conv = nn.Conv2d(1, 30, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
+        self.relu = nn.ReLU()
 
         # Calculate the output size of the Flatten Layer
         # conv_dimensions(c_in, h_in, w_in, c_out, stride, pad, k_height, k_width)
@@ -861,7 +889,7 @@ class G_M13(nn.Module):
         self.fc = nn.Linear(flatten_size, 10)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv(x)))
+        x = self.pool(self.relu(self.conv(x)))
         x = self.flatten(x)
         x = self.fc(x)
         return x
@@ -875,6 +903,7 @@ class G_M14(nn.Module):
         self.conv = nn.Conv2d(1, 30, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
+        self.relu = nn.ReLU()
 
         # Calculate the output size of the Flatten Layer
         # conv_dimensions(c_in, h_in, w_in, c_out, stride, pad, k_height, k_width)
@@ -886,9 +915,9 @@ class G_M14(nn.Module):
         self.fc2 = nn.Linear(500, 10)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv(x)))
+        x = self.pool(self.relu(self.conv(x)))
         x = self.flatten(x)
-        x = F.relu(self.fc1(x))
+        x = self.relu(self.fc1(x))
         x = self.fc2(x)
         return x
 
@@ -902,6 +931,7 @@ class G_M15(nn.Module):
         self.conv2 = nn.Conv2d(30, 60, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.flatten = Flatten()
+        self.relu = nn.ReLU()
 
         # Calculating total memory usage:
         print("Model weights (units are weights, where one weight is 4 bytes):")
@@ -934,10 +964,10 @@ class G_M15(nn.Module):
 
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
+        x = self.pool(self.relu(self.conv1(x)))
+        x = self.pool(self.relu(self.conv2(x)))
         x = self.flatten(x)
-        x = F.relu(self.fc1(x))
+        x = self.relu(self.fc1(x))
         x = self.fc2(x)
         return x
 

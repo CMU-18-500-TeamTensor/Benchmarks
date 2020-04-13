@@ -42,6 +42,7 @@ for data_pipeline in bench_suite.keys():
         net = model()
         summary(net, (3,32,32))
 
+        #SHould be mean squared error
         criterion = nn.CrossEntropyLoss()
         optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
