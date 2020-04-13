@@ -1,6 +1,8 @@
 
 import socket
 
+from modeldetailshelper import summary
+
 
 '''
 Each worker will be assigned a pipeline,
@@ -9,10 +11,14 @@ worker's model list
 '''
 class Worker:
     name = "Worker Name 1"
+    worker_ip = 'localhost'
+    worker_port = 18500
     data_pipeline = ""
     model_list = [] #Holds all models currently assigned to it
-    def __init__(self, name):
+    def __init__(self, name, ip, port):
         self.name = name
+        self.worker_ip = ip
+        self.port = port
 
     def assign_pipeline(self,pipeline):
         self.data_pipeline = pipeline
@@ -40,7 +46,7 @@ class DataPipelineManager:
         self.boards = boards
 
     def add_worker(self,name):
-        new_worker = Worker(name)
+        new_worker = Worker(name,'localhost',18500)
         self.worker_list.append(new_worker)
 
     #Adds a pipeline to a worker
@@ -55,10 +61,10 @@ class DataPipelineManager:
 
     def add_pipeline_to_worker(self):
         self.worker_list[0].assign_pipeline("Full Color")
-        self.worker_list[0].add_model(self.pipeline_list[0][2])
+        self.worker_list[0].model_list = self.pipeline_list[0][2]
 
-    def get_model(self,board):
-        return self.worker_list[0].model_list[0]
+    def get_model(self,worker_id,model_num):
+        return self.worker_list[worker_id].model_list[model_num]
 
     def printNumBoards(self):
         print("Current connected boards: ", self.boards)
@@ -67,10 +73,10 @@ class DataPipelineManager:
         print("What are the pipelines", self.pipeline_list)
 
     def print_boards(self):
-        print("what is the current worker list: ", self.worker_list)
+        print("Printing board list: ", self.worker_list)
 
     def print_worker_list(self, index):
-        print("What is the model list for worker with index", self.worker_list[index].get_model_list())
+        print("Printing model list for specific worker", self.worker_list[index].get_model_list())
 
 
 
@@ -190,8 +196,8 @@ def get_boards(IP, PORT):
     return ["DE0-Nano_1"]
     
 
-#Actually sending data over to a specific board
-def send_model(board):
+#Sends one model to the board specified
+def send_model(model):
     #Int tensor to use for verification purposes
     kernelTensor = [[[[1,2],[3,4],[5,6]],
                 [[7,8],[9,10],[11,12]],
@@ -207,12 +213,16 @@ def send_model(board):
     biasTensor = [1,2,3]
 
     packet_str = ""
-    layer_list = ["2D Convolution", "ReLU", "MaxPool", "Flatten", "Linear1", "ReLU", "Linear2"]
+    #summary(model,(1,32,32))
+    #Do this function today
+    layer_list = get_model_layers(model)
+    print("Layer List: ", layer_list)
+    #layer_list = ["2D Convolution", "ReLU", "MaxPool", "Flatten", "Linear1", "ReLU", "Linear2"]
     packet_str += "5,0,14,"
     packet_str += (str(len(layer_list)) + ",")
     print("What is packet_str: ", packet_str)
     for layer in layer_list:
-        if(layer == "2D Convolution"):
+        if(layer == "Conv2d"):
             #Opcode + parameters
             packet_str += "2,0,1,18,19,"
             #kernel 
@@ -225,11 +235,11 @@ def send_model(board):
                 packet_str += (str(i) + ",")
         elif(layer == "ReLU"): 
             packet_str += "3,"
-        elif(layer == "MaxPool"):
+        elif(layer == "MaxPool2d"):
             packet_str += "4,0,2,width,height,2,"
         elif(layer == "Flatten"):
             packet_str += "5,"
-        elif(layer == "Linear1"):
+        elif(layer == "Linear"):
             packet_str += "1,"
             serializedTensor = tensor_serializer(linear_tensor,2)
             for i in serializedTensor:
@@ -240,19 +250,16 @@ def send_model(board):
             for i in serializedTensor:
                 packet_str += (str(i) + ",")
 
-
+    
     print("Final packet_str: ", packet_str)
-
-    
+    '''
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-    
-    board_1 = ("localhost", 18500)
+    board_1 = (board.worker_ip, board.worker_port)
     message = packet_str
-
     # Send data
     print("Sending out msg: ", message)
     sent = sock.sendto(message.encode(), board_1)
+    '''
 
     
 
@@ -260,12 +267,25 @@ def send_model(board):
 def send_data(board):
     return "hello"
 
+
+#Given a model, returns a list of all of the layers in the order that they appear
+def get_model_layers(model):
+    layer_list = summary(model,(3,32,32))
+    loop_length = len(layer_list)
+    for i in range(loop_length):
+        element = layer_list.pop(0)
+        index = len(element) - element.index("-")
+        element = element[:-index]
+        layer_list.append(element)
+    return layer_list
+
 def train_models(dpm,data):
     IP = "localhost"
     PORT = 18500
 
     #Get all available boards and add to board list
-    board_list = get_boards(IP,PORT)
+    board_list = ["DE0-Nano_1"]
+    #board_list = get_boards(IP,PORT)
     print("what is board_list:", board_list)
     for i in range (len(board_list)):
         dpm.add_worker(board_list[i])
@@ -274,8 +294,8 @@ def train_models(dpm,data):
     dpm.print_pipelines()
     dpm.add_pipeline_to_worker()
     dpm.print_worker_list(0)
-    model = dpm.get_model(0)
-    print("what is the model that we got: ", model)
+    #first parameter is worker #, second # is index of model
+    model = dpm.get_model(0,1)().to(0)
     send_model(model)
 
     
@@ -322,6 +342,8 @@ def tensor_serializer(tensor, maxDim):
                         tensorList.append(tensor[i][j][k][l])
     
     return tensorList
+
+
 
 def main():
     IP = "localhost"
