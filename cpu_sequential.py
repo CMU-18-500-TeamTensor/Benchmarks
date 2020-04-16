@@ -52,7 +52,9 @@ for data_pipeline in bench_suite.keys():
             for i, data in enumerate(trainloader, 0):
                 # get the inputs; data is a list of [inputs, labels]
                 inputs, labels = data
-
+                print("What is inputs: ", inputs)
+                print("\n\n\n")
+                print("What is labels: ", labels)
                 inputs = torch.stack([pipeline_fn(inputs[i]) for i in range(inputs.shape[0])])
 
                 # zero the parameter gradients

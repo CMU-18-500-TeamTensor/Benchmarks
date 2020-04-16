@@ -222,29 +222,9 @@ def send_model(model):
     packet_str += (str(len(layer_list)) + ",")
     print("What is packet_str: ", packet_str)
     for layer in layer_list:
-        if(layer == "Conv2d"):
-            #Opcode + parameters
-            packet_str += "2,0,1,18,19,"
-            #kernel 
-            serializedTensor = tensor_serializer(kernelTensor,4)
-            for i in serializedTensor:
-                packet_str += (str(i) + ",")
-
-            serializedBias = tensor_serializer(biasTensor,1)
-            for i in serializedBias:
-                packet_str += (str(i) + ",")
-        elif(layer == "ReLU"): 
+        if(layer == "ReLU"): 
             packet_str += "3,"
-        elif(layer == "MaxPool2d"):
-            packet_str += "4,0,2,width,height,2,"
-        elif(layer == "Flatten"):
-            packet_str += "5,"
         elif(layer == "Linear"):
-            packet_str += "1,"
-            serializedTensor = tensor_serializer(linear_tensor,2)
-            for i in serializedTensor:
-                packet_str += (str(i) + ",")
-        elif(layer == "Linear2"):
             packet_str += "1,"
             serializedTensor = tensor_serializer(linear_tensor,2)
             for i in serializedTensor:
