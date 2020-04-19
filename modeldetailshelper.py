@@ -4,13 +4,13 @@ from torch.autograd import Variable
 
 from collections import OrderedDict
 import numpy as np
+#NOTE: idk what this does
+import ctypes
+ctypes.cdll.LoadLibrary('caffe2_nvrtc.dll')
 
 
 def summary(model, input_size, batch_size=-1, device=torch.device('cuda:0'), dtypes=None):
-    #result, params_info = summary_string(model, input_size, batch_size, device, dtypes)
     result = summary_string(model, input_size, batch_size, device, dtypes)
-    #print(result)
-
     return result
 
 
@@ -19,10 +19,20 @@ def summary_string(model, input_size, batch_size=-1, device=torch.device('cuda:0
         dtypes = [torch.FloatTensor]*len(input_size)
 
     summary_str = ''
+    special_layer_list = []
 
     def register_hook(module):
         def hook(module, input, output):
+            #print("type of module, module", type(module), module)
+            #special_layer_list.append((str()))
+            #if hasattr(module, "weight") and hasattr(module.weight, "size"):
+                #print("what is my module weight: ", module.weight)
+                #print("What is my module bias: ", module.bias)
             class_name = str(module.__class__).split(".")[-1].split("'")[0]
+            #Also does conversion from tensor to array
+            if("Linear" in class_name):
+                #print("(Is this the numpy array: ", module.weight.cpu().data.numpy())
+                special_layer_list.append((module.weight.cpu().data.numpy(),module.bias.cpu().data.numpy()))
             module_idx = len(summary)
 
             m_key = "%s-%i" % (class_name, module_idx + 1)
@@ -86,7 +96,7 @@ def summary_string(model, input_size, batch_size=-1, device=torch.device('cuda:0
     trainable_params = 0
     layer_list = []
     for layer in summary:
-        #print("What is layer: ", layer)
+        print("What is layer: ", layer)
         layer_list.append(layer)
         '''
         
@@ -140,4 +150,11 @@ def summary_string(model, input_size, batch_size=-1, device=torch.device('cuda:0
 
     # return summary
     '''
-    return layer_list[:-1]
+    #print("What is len of special_layer_list: ", len(special_layer_list[0][0]))
+    #kernelArray = special_layer_list[0][0]
+    #biasArray = special_layer_list[0][1]
+    #print("What is kernelArray: ", kernelArray)
+    #print("What is biasArray: ", biasArray)
+    #print("what is special_layer_list[0][0]: ", special_layer_list[0][1])
+    #print("what is special_layer_list[0][1]: ", special_layer_list[0][1])
+    return layer_list[:-1],special_layer_list

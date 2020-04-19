@@ -17,7 +17,7 @@ from tensorfpga import train_models
 from benchmark import bench_suite
 
 # Third party library functio
-from modelsummaryimport import summary
+from torchsummary import summary
 
 import torch
 import torchvision
@@ -33,7 +33,8 @@ def get_CIFAR10_dataset():
 
     trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                         download=True, transform=transform)
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=4,
+    #NOTE: We are using batch size of 1 so we can just send 1 batch at a time
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=1,
                                           shuffle=True, num_workers=2)
     return trainloader
 
@@ -57,7 +58,7 @@ def main():
 	#dp2_id = dpm.add_pipeline(dp2, name="full_color", buffer_size=10)
 
 	#user function to pull dataset
-	data = get_CIFAR10_dataset() # iterable over tuples (x, y)
+	trainloader = get_CIFAR10_dataset() # iterable over tuples (x, y)
 
 	#grab the whole model list, in this scenario just one model
 	model_list = bench_suite
@@ -76,7 +77,10 @@ def main():
 	
 	#Once all the models have been added to their respective pipelines and the data
 	#has been pulled, we begin training the models
-	train_models(dpm, data)
+	#my_model = model1().to(0)
+	#summary(my_model,(3,32,32))
+	#Pass in data pipeline manager and trainloader
+	train_models(dpm, trainloader)
 
 	# Retrieve accuracy from each metric
 	#for model in dpm.pipelines[dp1_id].models:

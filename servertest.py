@@ -5,12 +5,13 @@ server will send a response, signifiying that is has an available board
 '''
 
 import socket
+import pickle
 
 
 
 def read_content(IP,PORT):
-    responseGood = "Board #1 is available"
-    responseBad = "Board #1 is not available"
+    responseGood = pickle.dumps("Board #1 is available")
+    responseBad = pickle.dumps("Board #1 is not available")
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     #Set up server on board side
@@ -21,17 +22,43 @@ def read_content(IP,PORT):
     
     print("Listening for message")
     data, address = sock.recvfrom(4096)
+    message = pickle.loads(data)
 
-    print("Received broadcast: ", data)
+    print("Received broadcast: ", message)
 
-    sock.sendto(responseGood.encode(),address)
+    sock.sendto(responseGood,address)
     print("Sent response: ", responseGood)
 
-    print("Listening for packet")
-    data, address = sock.recvfrom(4096)
+    
+    print("Listening for expected model size")
+    sizeOfInt = 24
+    data, address = sock.recvfrom(sizeOfInt)
+    myModelSize = pickle.loads(data)
+    print("What is my model size: ", myModelSize)
+    chunk_size = 4096
+    counter = 0
+    finalPacket = []
+    while(counter < myModelSize):
+        print("Listening for packets about model info")
+        data, address = sock.recvfrom(chunk_size)
+        lower_bound = counter
+        upper_bound = min(counter+chunk_size,myModelSize)
+        print(lower_bound, upper_bound)
+        packet = pickle.loads(data)
+        finalPacket.extends(packet)
+        print("Read this many bytes so far: ", counter)
+        counter += chunk_size
 
-    print("Received packet: ", data)
+    '''
+    #print("Received model info of len:" , len(myModel))
+    #chunk read for the model size
+    while(readingModel):
+        data, address = sock.recvfrom(4096)
+        packet = pickle.loads(data)
 
+        boardConfirmation = True
+        if(boardConfirmation)
+    '''
     '''
     print("Listening for batch")
     data, address = sock.recvfrom(4096)

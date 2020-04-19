@@ -1,5 +1,8 @@
 
 import socket
+import pickle
+import sys
+import numpy
 
 from modeldetailshelper import summary
 
@@ -26,6 +29,7 @@ class Worker:
     def add_model(self,model):
         self.model_list.append(model)
 
+    
     def get_pipeline(self):
         return self.data_pipeline
 
@@ -48,6 +52,13 @@ class DataPipelineManager:
     def add_worker(self,name):
         new_worker = Worker(name,'localhost',18500)
         self.worker_list.append(new_worker)
+
+    def get_worker(self,name):
+        for worker in self.worker_list:
+            if(worker.get_worker_name() == name):
+                return worker
+        print("Found no worker with this name")
+        return
 
     #Adds a pipeline to a worker
     def add_pipeline(self, dp, pipeline_name, buffer_size):
@@ -81,7 +92,7 @@ class DataPipelineManager:
 
 
 
-
+'''
 # Given a det of data pipelines and connectivity to a worker finder, produce
 # an allocation of boards to data pipelines.
 # This algorithm works as follows:
@@ -169,35 +180,47 @@ def train_modells(dpm, data):
                 if i % 2000 == 0:
                     loss = dp.retrieve('loss')
                     print(loss)
+'''
+
+#returns the float32 version of any number (4 bytes)
+def f32(float_num):
+    return numpy.float32(float_num)
 
 
 #Using UPD, send out broadcast to detect what boards are available
 #Returns a lit of available boards
+
 def get_boards(IP, PORT):
+    '''
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-    
     board_1 = (IP, PORT)
     message = "Is board 1 available"
+    temp_list = ["this","is","my","message"]
+    message1 = pickle.dumps(message)
+
 
     # Send data
     print("Sending out msg: ", message)
-    sent = sock.sendto(message.encode(), board_1)
+    sent = sock.sendto(message1, board_1)
 
     # Receive response
     print("Waiting to receive msg from server")
     while True:
         data, server = sock.recvfrom(4096)
+        confirmation = pickle.loads(data)
         if(data):
             print("Received message from server: ", data)
             break;
-
-    print("Exiting out of client")
-    return ["DE0-Nano_1"]
+    #NOTE: Currently assumes that there is no issues with reading what boards are 
+    #available, automatically returns 4 connected boards
+    '''
+    return ["DE0-Nano_1", "DE0-Nano_2", "DE0-Nano_3", "DE0-Nano_4"]
     
 
 #Sends one model to the board specified
-def send_model(model):
+def send_model(model, worker):
+
     #Int tensor to use for verification purposes
     kernelTensor = [[[[1,2],[3,4],[5,6]],
                 [[7,8],[9,10],[11,12]],
@@ -212,60 +235,203 @@ def send_model(model):
 
     biasTensor = [1,2,3]
 
-    packet_str = ""
-    #summary(model,(1,32,32))
+    packet_list = []
     #Do this function today
-    layer_list = get_model_layers(model)
+    layer_list, special_layer_list = get_model_layers(model)
     print("Layer List: ", layer_list)
-    #layer_list = ["2D Convolution", "ReLU", "MaxPool", "Flatten", "Linear1", "ReLU", "Linear2"]
-    packet_str += "5,0,14,"
-    packet_str += (str(len(layer_list)) + ",")
-    print("What is packet_str: ", packet_str)
+    packet_list.append(f32(5.0)) #opcode for 
+    packet_list.append(f32(0.0)) #pipeline id
+    packet_list.append(f32(14.0)) #model id
+    packet_list.append(f32((len(layer_list)))) #number of layers
+
+    specialCounter = 0
+    #print("What is len of packet_list: ", len(packet_list))
     for layer in layer_list:
         if(layer == "ReLU"): 
-            packet_str += "3,"
+            packet_list.append(f32(3)) #op code for ReLU layer
         elif(layer == "Linear"):
-            packet_str += "1,"
-            serializedTensor = tensor_serializer(linear_tensor,2)
-            for i in serializedTensor:
-                packet_str += (str(i) + ",")
+            kernelTensor = special_layer_list[specialCounter][0]
+            biasTensor = special_layer_list[specialCounter][1]
+            specialCounter+=1
+            packet_list.append(f32(1)) #op code for Linear layer
+            #packet_str += "1,"
+            serializedKernel = tensor_to_list(kernelTensor,2)
+            serializedBias = tensor_to_list(biasTensor,1)
+            print("What is len of serializedKernel: ", len(serializedKernel))
+            print("What is len of serializedBias: ", len(serializedBias))
+            packet_list.extend(serializedKernel)
+            packet_list.extend(serializedBias)
 
+    print("What is len of packet_list: ", len(packet_list))
+    myType = type(packet_list[0])
+    print(myType)
+    #make sure every element in packet_list is the same type "<class 'numpy.float32'>"
+    for i in range(len(packet_list)):
+        element = packet_list[i]
+        if(type(element) != myType):
+            print(type(element), myType, i)    
+            exit(1)
+    print("Looks good to me")
     
-    print("Final packet_str: ", packet_str)
-    '''
+    #NOTE: COME BACK TO THIS, CHANGE THIS TO TCP    
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    board_1 = (board.worker_ip, board.worker_port)
-    message = packet_str
-    # Send data
-    print("Sending out msg: ", message)
-    sent = sock.sendto(message.encode(), board_1)
-    '''
-
+    board_1 = (worker.worker_ip, worker.worker_port)
     
+    # Sending size of model first
+    msgsize = pickle.dumps(len(packet_list))
+    #NOTE: MAKING TEMP PACKET_LIST FOR TESTING PURPOSES REMOVE FROM HERE
+    packet_list = []
+    for i in range(200):
+        packet_list.append(f32(i))
+
+    #NOTE: TO HERE WHEN FINISHED TESTING
+    print("Sending out size of message: ", len(packet_list))
+    sent = sock.sendto(msgsize, board_1)
+
+    # Sending out model info in chunks of 10,000 bytes
+    print("Sending out the actual msg now")
+    chunk_size = 4096
+    counter = 0
+    sent = 0
+    #CURRENT ISSUES: HAVING TROUBLE SENDING MODEL OVER, NEED TO FIGURE OUT HOW TO CHUNK SEND
+    #SOLUTION: SWAP THIS TO USE TCP INSTEAD FOR CHUNK SENDING
+    while(sent < len(packet_list)):
+        lower_bound = counter
+        upper_bound = min(counter+chunk_size,len(packet_list))
+        print(lower_bound, upper_bound)
+        message = pickle.dumps(packet_list[lower_bound:upper_bound])
+        sent += sock.sendto(message,board_1)
+        print("Sent this many bytes: ", sent)
+        print("Send this many bytes so far: ", counter)
+        counter += chunk_size
+    print("Finished sending the model")
 
 
-def send_data(board):
-    return "hello"
+
+
+def send_data(trainloader, worker):
+    #NOTE:Should trainloader be defined here or should this be done by the user
+    #NOTE:Will the labels always be the same size or will they be different
+    #data_str = ""
+    data_list = []
+    counter = 0
+    for i, data in enumerate(trainloader, 0):
+        inputs, labels = data
+        #print(len(inputs), len(inputs[0]), len(inputs[0][0]), len(inputs[0][0][0]), numpy.float32((inputs[0][0][0][0])))
+        #print(type(inputs))
+        input_list = inputs.numpy()
+        #print(type(input_list))
+        #print(type(labels))
+        serializedInput = tensor_to_list(input_list,4)
+        print(type(serializedInput[0]))
+        data_list.extend(serializedInput)
+        #print("What is len of serialized", len(serializedInput))
+        #print("What is serializedInput: ", serializedInput)
+        #data_str += serializedInput
+        counter+=1
+    print("what is counter: ", counter)
+    #print("Whats the final data_str: ", data_str)
+    #print("What is len of final data_str: ", len(data_str))
+
+
+#NOTE: This is kinda ugly, should clean this up, make it more efficient
+def tensor_to_string(tensor, maxDim):
+    #print("Starting tensor_serialization")
+    #Resulting serialization, one dimension linear
+    tensorStr = ""
+    tensorStr += (str(maxDim) + ",")
+    tensorStr += (str(len(tensor)) + ",")
+    if(maxDim == 1):
+        for i in range(len(tensor)):
+            tensorStr += (str(tensor[i]) + ",")        
+
+    elif (maxDim == 2):
+        tensorStr += (str(len(tensor[0])) + ",")
+        for j in range(len(tensor[0])):
+            for i in range(len(tensor)):
+                tensorStr += (str(tensor[i][j]) + ",")
+
+    elif (maxDim == 3):
+        tensorStr += (str(len(tensor[0])) + ",")
+        tensorStr += (str(len(tensor[0][0])) + ",")
+
+        for k in range(len(tensor[0][0])):
+            for j in range(len(tensor[0])):
+                for i in range(len(tensor)):
+                    tensorStr += (str(tensor[i][j][k]) + ",")
+    
+    elif (maxDim == 4):
+        tensorStr += (str(len(tensor[0])) + ",")
+        tensorStr += (str(len(tensor[0][0])) + ",")
+        tensorStr += (str(len(tensor[0][0][0])) + ",")
+
+        for l in range(len(tensor[0][0][0])):
+            for k in range(len(tensor[0][0])):
+                for j in range(len(tensor[0])):
+                    for i in range(len(tensor)):
+                        tensorStr += (str((tensor[i][j][k][l])) + ",")
+    
+    return tensorStr
+
+
+#NOTE: This returns a list instead of a string
+def tensor_to_list(tensor, maxDim):
+    #Resulting serialization, one dimension linear
+    tensorList = []
+    tensorList.append(f32(maxDim))
+    tensorList.append(f32(len(tensor)))
+    if(maxDim == 1):
+        for i in range(len(tensor)):
+            tensorList.append(numpy.float32(tensor[i]))
+        
+
+    elif (maxDim == 2):
+        tensorList.append(f32(len(tensor[0])))
+        for j in range(len(tensor[0])):
+            for i in range(len(tensor)):
+                tensorList.append(numpy.float32(tensor[i][j]))
+
+    elif (maxDim == 3):
+        tensorList.append(f32(len(tensor[0])))
+        tensorList.append(f32(len(tensor[0][0])))
+        for k in range(len(tensor[0][0])):
+            for j in range(len(tensor[0])):
+                for i in range(len(tensor)):
+                    tensorList.append(numpy.float32(tensor[i][j][k]))
+    
+    elif (maxDim == 4):
+        tensorList.append(f32(len(tensor[0])))
+        tensorList.append(f32(len(tensor[0][0])))
+        tensorList.append(f32(len(tensor[0][0][0])))
+        for l in range(len(tensor[0][0][0])):
+            for k in range(len(tensor[0][0])):
+                for j in range(len(tensor[0])):
+                    for i in range(len(tensor)):
+                        tensorList.append(numpy.float32(tensor[i][j][k][l]))
+    
+    return tensorList
+
 
 
 #Given a model, returns a list of all of the layers in the order that they appear
 def get_model_layers(model):
-    layer_list = summary(model,(3,32,32))
+    #layer lists holds all the layers
+    #special_layer_list holds all the information for each Linear layer
+    layer_list, special_layer_list = summary(model,(3,32,32))
     loop_length = len(layer_list)
     for i in range(loop_length):
         element = layer_list.pop(0)
         index = len(element) - element.index("-")
         element = element[:-index]
         layer_list.append(element)
-    return layer_list
+    return layer_list, special_layer_list
 
-def train_models(dpm,data):
+def train_models(dpm,trainloader):
     IP = "localhost"
     PORT = 18500
 
     #Get all available boards and add to board list
-    board_list = ["DE0-Nano_1"]
-    #board_list = get_boards(IP,PORT)
+    board_list = get_boards(IP,PORT)
     print("what is board_list:", board_list)
     for i in range (len(board_list)):
         dpm.add_worker(board_list[i])
@@ -276,58 +442,21 @@ def train_models(dpm,data):
     dpm.print_worker_list(0)
     #first parameter is worker #, second # is index of model
     model = dpm.get_model(0,1)().to(0)
-    send_model(model)
+    print("Which model is this: ", model)
+    #send_model should send in the model and the board OBJECT
+    worker = dpm.get_worker("DE0-Nano_1")
+    print("What is worker: ", worker)
+    #send_model(model,worker)
+    #After all the models are sent, send the data
+    send_data(trainloader, worker)
 
-    
-
-
-
-#Note: can we assume that all of our tensors will be 4 dimensions?
-#Note: Current only works for 4 dimension tensor
-#Returns serialized tensor in list format
-#This is kinda ugly, should clean this up, make it more efficient
-def tensor_serializer(tensor, maxDim):
-    print("Starting tensor_serialization")
-    #Resulting serialization, one dimension linear
-    tensorList = []
-    tensorList.append(maxDim)
-    tensorList.append(len(tensor))
-    if(maxDim == 1):
-        for i in range(len(tensor)):
-            tensorList.append(tensor[i])
-        
-
-    elif (maxDim == 2):
-        tensorList.append(len(tensor[0]))
-        for j in range(len(tensor[0])):
-            for i in range(len(tensor)):
-                tensorList.append(tensor[i][j])
-
-    elif (maxDim == 3):
-        tensorList.append(len(tensor[0]))
-        tensorList.append(len(tensor[0][0]))
-        for k in range(len(tensor[0][0])):
-            for j in range(len(tensor[0])):
-                for i in range(len(tensor)):
-                    tensorList.append(tensor[i][j][k])
-    
-    elif (maxDim == 4):
-        tensorList.append(len(tensor[0]))
-        tensorList.append(len(tensor[0][0]))
-        tensorList.append(len(tensor[0][0][0]))
-        for l in range(len(tensor[0][0][0])):
-            for k in range(len(tensor[0][0])):
-                for j in range(len(tensor[0])):
-                    for i in range(len(tensor)):
-                        tensorList.append(tensor[i][j][k][l])
-    
-    return tensorList
 
 
 
 def main():
     IP = "localhost"
     PORT = 18500
+    '''
     my1DTensor = [1,2,3]
 
     my2DTensor = [[1,2],[3,4],[5,6]]
@@ -346,10 +475,17 @@ def main():
                 [[37,38],[39,40],[41,42]],
                 [[43,44],[45,46],[47,48]]]]
 
-    tensorList = tensor_serializer(my2DTensor, 2)
-    print("What is tensorList: ", tensorList)
+    tensorList = tensor_serializer(my4DTensor, 4)
+    tensorStr = tensor_serializer2(my4DTensor, 4)
+    #print(tensorList)
+    #print(tensorStr)
+    tensorList2 = list(tensorStr.split(","))
+    tensorList2 = tensorList2[:-1]
+    for i in range(max(len(tensorList2),len(tensorList))):
+        print(tensorList[i],tensorList2[i])
+    '''
 
-    #get_boards(IP, PORT)
+    get_boards(IP, PORT)
 
 
 if __name__ == '__main__':
