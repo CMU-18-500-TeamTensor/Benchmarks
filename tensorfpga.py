@@ -272,7 +272,7 @@ def send_content(content_list, worker):
 
 
 #Sends one model to the board specified
-def send_model(model, worker):
+def send_model(model, worker, model_id):
 
     #Int tensor to use for verification purposes
     '''
@@ -294,23 +294,40 @@ def send_model(model, worker):
     packet_list = []
     
     #Do this function today
-    layer_list, special_layer_list = get_model_layers(model)
-    #print("Layer List: ", layer_list)
+    layer_list, special_layer_list, t_model_size = get_model_layers(model)
+    class_name = str(model.__class__).split(".")[-1].split("'")[0]
+    print("what is model.__class__", str(model.__class__))
+    print("What is class_name: ", class_name)
+    #print("model layers retrieved")
+    #USE INTEGERS WHERE YOU CAN
+    #numpy.uint32(5)
+    '''
     packet_list.append(f32(5.0)) #opcode for 
     packet_list.append(f32(0.0)) #pipeline id
     packet_list.append(f32(14.0)) #model id
+    #instead of number of layers, append the total size of the model
     packet_list.append(f32((len(layer_list)))) #number of layers
+    '''
+    packet_list.append(numpy.uint32(5))
+    packet_list.append(numpy.uint32(0))
+    #chagne this to actually use the model #
+    packet_list.append(numpy.uint32(model_id))
+    #change this to use the actual size of the model
+    #print("what is int32 of model_size: ", numpy.uint32(t_model_size))
+    packet_list.append(numpy.uint32(t_model_size))
 
     specialCounter = 0
     #print("What is len of packet_list: ", len(packet_list))
     for layer in layer_list:
-        if(layer == "ReLU"): 
-            packet_list.append(f32(3)) #op code for ReLU layer
+        if(layer == "ReLU"):
+            packet_list.append(numpy.uint32(3)) #op code for ReLU layer
+            #packet_list.append(f32(3)) #op code for ReLU layer
         elif(layer == "Linear"):
             kernelTensor = special_layer_list[specialCounter][0]
             biasTensor = special_layer_list[specialCounter][1]
             specialCounter+=1
-            packet_list.append(f32(1)) #op code for Linear layer
+            packet_list.append(numpy.uint32(1)) #op code for Linear layer
+            #packet_list.append(f32(1)) #op code for Linear layer
             #packet_str += "1,"
             serializedKernel = tensor_to_list(kernelTensor,2)
             serializedBias = tensor_to_list(biasTensor,1)
@@ -318,17 +335,19 @@ def send_model(model, worker):
             #print("What is len of serializedBias: ", len(serializedBias))
             packet_list.extend(serializedKernel)
             packet_list.extend(serializedBias)
-
     #print("What is len of packet_list: ", len(packet_list))
     myType = type(packet_list[0])
     #print(myType)
     
     #make sure every element in packet_list is the same type "<class 'numpy.float32'>"
+    ''''
     for i in range(len(packet_list)):
         element = packet_list[i]
         if(type(element) != myType):
-            print(type(element), myType, i)    
+            print(type(element), myType, i)
+            print("Type mismatch, exiting!")
             exit(1)
+    '''
     #print("Looks good to me")
     print("Sending model to RaspPi")
     time_start = now()
@@ -348,6 +367,8 @@ def send_data(trainloader, worker):
     data_list = []
     counter = 0
     #time_start = now()
+    data_list.append(numpy.uint32(11)) # opcode for data packet
+    data_list.append(numpy.uint32(1)) # number of batches, only send one at a time
     for i, data in enumerate(trainloader, 0):
         print("New data batch: ", i)
         if (counter == 0):
@@ -424,31 +445,42 @@ def tensor_to_string(tensor, maxDim):
 def tensor_to_list(tensor, maxDim):
     #Resulting serialization, one dimension linear
     tensorList = []
+    '''
     tensorList.append(f32(maxDim))
     tensorList.append(f32(len(tensor)))
+    '''
+    tensorList.append(numpy.uint32(maxDim))
+    tensorList.append(numpy.uint32(len(tensor)))
+
     if(maxDim == 1):
         for i in range(len(tensor)):
             tensorList.append(numpy.float32(tensor[i]))
         
 
     elif (maxDim == 2):
-        tensorList.append(f32(len(tensor[0])))
+        #tensorList.append(f32(len(tensor[0])))
+        tensorList.append(numpy.uint32(len(tensor[0])))
         for j in range(len(tensor[0])):
             for i in range(len(tensor)):
                 tensorList.append(numpy.float32(tensor[i][j]))
 
     elif (maxDim == 3):
-        tensorList.append(f32(len(tensor[0])))
-        tensorList.append(f32(len(tensor[0][0])))
+        #tensorList.append(f32(len(tensor[0])))
+        #tensorList.append(f32(len(tensor[0][0])))
+        tensorList.append(numpy.uint32(len(tensor[0])))
+        tensorList.append(numpy.uint32(len(tensor[0][0])))
         for k in range(len(tensor[0][0])):
             for j in range(len(tensor[0])):
                 for i in range(len(tensor)):
                     tensorList.append(numpy.float32(tensor[i][j][k]))
     
     elif (maxDim == 4):
-        tensorList.append(f32(len(tensor[0])))
-        tensorList.append(f32(len(tensor[0][0])))
-        tensorList.append(f32(len(tensor[0][0][0])))
+        #tensorList.append(f32(len(tensor[0])))
+        #tensorList.append(f32(len(tensor[0][0])))
+        #tensorList.append(f32(len(tensor[0][0][0])))
+        tensorList.append(numpy.uint32(len(tensor[0])))
+        tensorList.append(numpy.uint32(len(tensor[0][0])))
+        tensorList.append(numpy.uint32(len(tensor[0][0][0])))
         for l in range(len(tensor[0][0][0])):
             for k in range(len(tensor[0][0])):
                 for j in range(len(tensor[0])):
@@ -463,14 +495,16 @@ def tensor_to_list(tensor, maxDim):
 def get_model_layers(model):
     #layer lists holds all the layers
     #special_layer_list holds all the information for each Linear layer
-    layer_list, special_layer_list = summary(model,(3,32,32))
+    layer_list, special_layer_list, t_model_size = summary(model,(3,32,32))
     loop_length = len(layer_list)
+    #Remove the extra values after the layer list name
     for i in range(loop_length):
         element = layer_list.pop(0)
         index = len(element) - element.index("-")
         element = element[:-index]
         layer_list.append(element)
-    return layer_list, special_layer_list
+    print("What is t_model_size: ", t_model_size)
+    return layer_list, special_layer_list, t_model_size
 
 def train_models(dpm,trainloader):
     IP = "localhost"
@@ -493,7 +527,7 @@ def train_models(dpm,trainloader):
         model = dpm.get_model_from_pipeline(0,i)
         print("my model at i: ", i, model)
         mymodel = model().to(0)
-        send_model(mymodel,worker1)
+        send_model(mymodel,worker1, i)
         time.sleep(1)
     #first parameter is worker #, second # is index of model
     #After all the models are sent, send the data

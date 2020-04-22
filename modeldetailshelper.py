@@ -23,11 +23,6 @@ def summary_string(model, input_size, batch_size=-1, device=torch.device('cuda:0
 
     def register_hook(module):
         def hook(module, input, output):
-            #print("type of module, module", type(module), module)
-            #special_layer_list.append((str()))
-            #if hasattr(module, "weight") and hasattr(module.weight, "size"):
-                #print("what is my module weight: ", module.weight)
-                #print("What is my module bias: ", module.bias)
             class_name = str(module.__class__).split(".")[-1].split("'")[0]
             #Also does conversion from tensor to array
             if("Linear" in class_name):
@@ -96,9 +91,7 @@ def summary_string(model, input_size, batch_size=-1, device=torch.device('cuda:0
     trainable_params = 0
     layer_list = []
     for layer in summary:
-        #print("What is layer: ", layer)
         layer_list.append(layer)
-        '''
         
         # input_shape, output_shape, trainable, nb_params
         line_new = "{:>20}  {:>25} {:>15}".format(
@@ -114,20 +107,27 @@ def summary_string(model, input_size, batch_size=-1, device=torch.device('cuda:0
             if summary[layer]["trainable"] == True:
                 trainable_params += summary[layer]["nb_params"]
         summary_str += line_new + "\n"
-        '''
         
 
-    '''
     # assume 4 bytes/number (float on cuda).
     total_input_size = abs(np.prod(sum(input_size, ()))
                            * batch_size * 4. / (1024 ** 2.))
     total_output_size = abs(2. * total_output * 4. /
                             (1024 ** 2.))  # x2 for gradients
+    total_input_size_bytes = abs(np.prod(sum(input_size,())) * 4.)
+    total_output_size_bytes = abs(2. * total_output * 4.)
+    total_params_size_bytes = abs(total_params * 4.)
+    print("Total input size (Bytes): ", total_input_size_bytes)
+    print("Total output size (Bytes): ", total_output_size_bytes)
+    print("Total params size (Bytes): ", total_params_size_bytes.item())
+    total_size_bytes = total_input_size_bytes + total_output_size_bytes + total_params_size_bytes.item()
+    print("Total size (Bytes): ", total_size_bytes)
+    '''
     print(type(total_params.item()))
     print("Params size (MB): %0.2f" % total_params)
     total_params_size = abs(total_params * 4. / (1024 ** 2.))
-    total_size_bytes = abs((np.prod(sum(input_size, ())) * batch_size)) + abs(2*total_output) + total_params
-    print("Total size in bytes: ", total_size_bytes.item())
+    #total_size_bytes = abs((np.prod(sum(input_size, ())) * batch_size)) + abs(2*total_output) + total_params
+    #print("Total size in bytes: ", total_size_bytes.item())
     total_size = total_params_size + total_output_size + total_input_size
 
     
@@ -147,7 +147,6 @@ def summary_string(model, input_size, batch_size=-1, device=torch.device('cuda:0
     print("Forward/backward pass size (MB): %0.2f" % total_output_size)
     print("Params size (MB): %0.2f" % total_params_size)
     print("Estimated Total Size (MB): %0.2f" % total_size)
-
     # return summary
     '''
     #print("What is len of special_layer_list: ", len(special_layer_list[0][0]))
@@ -157,4 +156,4 @@ def summary_string(model, input_size, batch_size=-1, device=torch.device('cuda:0
     #print("What is biasArray: ", biasArray)
     #print("what is special_layer_list[0][0]: ", special_layer_list[0][1])
     #print("what is special_layer_list[0][1]: ", special_layer_list[0][1])
-    return layer_list[:-1],special_layer_list
+    return layer_list[:-1],special_layer_list, total_size_bytes
