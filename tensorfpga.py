@@ -3,6 +3,7 @@ import socket
 import pickle
 import sys
 import numpy
+import time
 
 from modeldetailshelper import summary
 
@@ -14,6 +15,7 @@ worker's model list
 '''
 class Worker:
     name = "Worker Name 1"
+    #worker_ip = 'pi.tensor.tk'
     worker_ip = 'localhost'
     worker_port = 18500
     data_pipeline = ""
@@ -70,9 +72,15 @@ class DataPipelineManager:
     def add_model(self, model, dp_id):
         self.pipeline_list[dp_id][2].append(model)
 
-    def add_pipeline_to_worker(self):
-        self.worker_list[0].assign_pipeline("Full Color")
+    def add_pipeline_to_worker(self,pipeline_id,worker_index):
+        self.worker_list[0].assign_pipeline("full_color")
         self.worker_list[0].model_list = self.pipeline_list[0][2]
+
+    def get_pipeline(self, pipeline_id):
+        return self.pipeline_list[pipeline_id][2]
+
+    def get_model_from_pipeline(self, pipeline_id, model_num):
+        return self.pipeline_list[pipeline_id][2][model_num]
 
     def get_model(self,worker_id,model_num):
         return self.worker_list[worker_id].model_list[model_num]
@@ -81,7 +89,10 @@ class DataPipelineManager:
         print("Current connected boards: ", self.boards)
 
     def print_pipelines(self):
-        print("What are the pipelines", self.pipeline_list)
+        #print("What are the pipelines", self.pipeline_list)
+        for i in range(len(self.pipeline_list)):
+            pipeline = self.pipeline_list[i]
+            print("What is in pipeline: ", i, self.pipeline_list[i][2])
 
     def print_boards(self):
         print("Printing board list: ", self.worker_list)
@@ -186,6 +197,9 @@ def train_modells(dpm, data):
 def f32(float_num):
     return numpy.float32(float_num)
 
+def now():
+    return int(round(time.time() * 1000))
+
 
 #Using UPD, send out broadcast to detect what boards are available
 #Returns a lit of available boards
@@ -218,10 +232,50 @@ def get_boards(IP, PORT):
     return ["DE0-Nano_1", "DE0-Nano_2", "DE0-Nano_3", "DE0-Nano_4"]
     
 
+#given a list, sends the list in the form of a bytes stream using TCP to the RaspPi
+#does not return until receives confirmation from RaspPi
+#Treating the data source machine as a client
+#NOTE: THIS IS NOT EFFICIENT, TOO MANY BACK AND FORTHS, CAN REDUCE THE # OF CALLS
+def send_content(content_list, worker):
+    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    #board = (worker.worker_ip, worker.worker_port)
+    tcp_socket.connect(("localhost",18500))
+    content_len = len(content_list)
+    #print("content_len: ", content_len)
+    #send total total elements, as well as size of total byte stream
+    total_elements = f'{len(content_list):<20}'
+    total_stream_size = f'{len(pickle.dumps(content_list)):<20}'
+    
+    #print(total_elements, total_stream_size)
+    tcp_socket.send(bytes(total_elements, "utf-8"))
+    tcp_socket.send(bytes(total_stream_size, "utf-8"))
+    counter = 0
+    #convert part of list to bytes stream, send small byte stream
+    #convert back to list, add to final list
+    print("Total_elements, stream size: ", total_elements, total_stream_size)
+    while (counter < content_len):
+        lower_bound = counter
+        upper_bound = min(counter+1000, content_len)
+        #print(lower_bound, upper_bound)
+        model_fragment = content_list[lower_bound:upper_bound]
+        #print("model_fragment: ", model_fragment)
+        content_pickle = pickle.dumps(model_fragment)
+        msgsize = f'{len(content_pickle):<20}'
+        #send how many bytes are going to be sent first
+        value = tcp_socket.send(bytes(msgsize, "utf-8"))
+        #send the fragment
+        value = tcp_socket.send(content_pickle)
+        counter = upper_bound
+    print("Finished sending content")
+    tcp_socket.close()
+    return 
+
+
 #Sends one model to the board specified
 def send_model(model, worker):
 
     #Int tensor to use for verification purposes
+    '''
     kernelTensor = [[[[1,2],[3,4],[5,6]],
                 [[7,8],[9,10],[11,12]],
                 [[13,14],[15,16],[17,18]],
@@ -234,11 +288,14 @@ def send_model(model, worker):
     linear_tensor = [[1,2],[3,4],[5,6]]
 
     biasTensor = [1,2,3]
+    '''
 
+    #Holds the model information
     packet_list = []
+    
     #Do this function today
     layer_list, special_layer_list = get_model_layers(model)
-    print("Layer List: ", layer_list)
+    #print("Layer List: ", layer_list)
     packet_list.append(f32(5.0)) #opcode for 
     packet_list.append(f32(0.0)) #pipeline id
     packet_list.append(f32(14.0)) #model id
@@ -257,81 +314,70 @@ def send_model(model, worker):
             #packet_str += "1,"
             serializedKernel = tensor_to_list(kernelTensor,2)
             serializedBias = tensor_to_list(biasTensor,1)
-            print("What is len of serializedKernel: ", len(serializedKernel))
-            print("What is len of serializedBias: ", len(serializedBias))
+            #print("What is len of serializedKernel: ", len(serializedKernel))
+            #print("What is len of serializedBias: ", len(serializedBias))
             packet_list.extend(serializedKernel)
             packet_list.extend(serializedBias)
 
-    print("What is len of packet_list: ", len(packet_list))
+    #print("What is len of packet_list: ", len(packet_list))
     myType = type(packet_list[0])
-    print(myType)
+    #print(myType)
+    
     #make sure every element in packet_list is the same type "<class 'numpy.float32'>"
     for i in range(len(packet_list)):
         element = packet_list[i]
         if(type(element) != myType):
             print(type(element), myType, i)    
             exit(1)
-    print("Looks good to me")
-    
-    #NOTE: COME BACK TO THIS, CHANGE THIS TO TCP    
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    board_1 = (worker.worker_ip, worker.worker_port)
-    
-    # Sending size of model first
-    msgsize = pickle.dumps(len(packet_list))
-    #NOTE: MAKING TEMP PACKET_LIST FOR TESTING PURPOSES REMOVE FROM HERE
-    packet_list = []
-    for i in range(200):
-        packet_list.append(f32(i))
-
-    #NOTE: TO HERE WHEN FINISHED TESTING
-    print("Sending out size of message: ", len(packet_list))
-    sent = sock.sendto(msgsize, board_1)
-
-    # Sending out model info in chunks of 10,000 bytes
-    print("Sending out the actual msg now")
-    chunk_size = 4096
-    counter = 0
-    sent = 0
-    #CURRENT ISSUES: HAVING TROUBLE SENDING MODEL OVER, NEED TO FIGURE OUT HOW TO CHUNK SEND
-    #SOLUTION: SWAP THIS TO USE TCP INSTEAD FOR CHUNK SENDING
-    while(sent < len(packet_list)):
-        lower_bound = counter
-        upper_bound = min(counter+chunk_size,len(packet_list))
-        print(lower_bound, upper_bound)
-        message = pickle.dumps(packet_list[lower_bound:upper_bound])
-        sent += sock.sendto(message,board_1)
-        print("Sent this many bytes: ", sent)
-        print("Send this many bytes so far: ", counter)
-        counter += chunk_size
+    #print("Looks good to me")
+    print("Sending model to RaspPi")
+    time_start = now()
+    send_content(packet_list, worker)
+    time_finish = now()
+    print("Time to send model: ", time_finish-time_start)
     print("Finished sending the model")
 
 
 
 
+#NOTE: sending data takes very long time, timing the whole thing is going to be tricky
 def send_data(trainloader, worker):
     #NOTE:Should trainloader be defined here or should this be done by the user
     #NOTE:Will the labels always be the same size or will they be different
     #data_str = ""
     data_list = []
     counter = 0
+    #time_start = now()
     for i, data in enumerate(trainloader, 0):
-        inputs, labels = data
-        #print(len(inputs), len(inputs[0]), len(inputs[0][0]), len(inputs[0][0][0]), numpy.float32((inputs[0][0][0][0])))
-        #print(type(inputs))
-        input_list = inputs.numpy()
-        #print(type(input_list))
-        #print(type(labels))
-        serializedInput = tensor_to_list(input_list,4)
-        print(type(serializedInput[0]))
-        data_list.extend(serializedInput)
-        #print("What is len of serialized", len(serializedInput))
-        #print("What is serializedInput: ", serializedInput)
-        #data_str += serializedInput
-        counter+=1
-    print("what is counter: ", counter)
-    #print("Whats the final data_str: ", data_str)
-    #print("What is len of final data_str: ", len(data_str))
+        print("New data batch: ", i)
+        if (counter == 0):
+            inputs, labels = data
+            #print(type(inputs))
+            input_list = inputs.numpy().tolist()
+            #print(type(input_list))
+            #print(type(labels))
+            serializedInput = tensor_to_list(input_list,4)
+            #print(type(serializedInput[0]))
+            data_list.extend(serializedInput)
+            #convert from tensor to list
+            label_list = labels.numpy().tolist()
+            serializedLabel = tensor_to_list(label_list,1)
+            data_list.extend(serializedLabel)
+            #print(data_list)
+            print("Sending data to RaspPi")
+            time_start = now()
+            send_content(data_list,worker)
+            time_finish = now()
+            print("Finished sending data")
+            total_time = time_finish-time_start
+            average_time = total_time/50000.0
+            print(total_time, average_time)
+            break
+    #time_finish = now()
+    print("Sent all batches of data")
+    total_time = time_finish-time_start
+    average_time = total_time/50000.0
+    print(total_time, average_time)
 
 
 #NOTE: This is kinda ugly, should clean this up, make it more efficient
@@ -436,19 +482,22 @@ def train_models(dpm,trainloader):
     for i in range (len(board_list)):
         dpm.add_worker(board_list[i])
     
-    dpm.print_boards()
-    dpm.print_pipelines()
-    dpm.add_pipeline_to_worker()
-    dpm.print_worker_list(0)
+    #dpm.print_boards()
+    #dpm.print_pipelines()
+
+    #dpm.print_worker_list(0)
+    print(dpm.get_pipeline(0))
+    worker1 = dpm.get_worker("DE0-Nano_1")
+    worker2 = dpm.get_worker("DE0-Nano_2")
+    for i in range(len(dpm.get_pipeline(0))):
+        model = dpm.get_model_from_pipeline(0,i)
+        print("my model at i: ", i, model)
+        mymodel = model().to(0)
+        send_model(mymodel,worker1)
+        time.sleep(1)
     #first parameter is worker #, second # is index of model
-    model = dpm.get_model(0,1)().to(0)
-    print("Which model is this: ", model)
-    #send_model should send in the model and the board OBJECT
-    worker = dpm.get_worker("DE0-Nano_1")
-    print("What is worker: ", worker)
-    #send_model(model,worker)
     #After all the models are sent, send the data
-    send_data(trainloader, worker)
+    send_data(trainloader, worker1)
 
 
 
@@ -485,7 +534,13 @@ def main():
         print(tensorList[i],tensorList2[i])
     '''
 
-    get_boards(IP, PORT)
+    #get_boards(IP, PORT)
+    packet_list = []
+    for i in range(10087):
+        packet_list.append(i)
+    print("what is packet_list len: ", len(packet_list))
+    worker = Worker("Board1", "localhost", 18500)
+    send_content(packet_list, worker)
 
 
 if __name__ == '__main__':

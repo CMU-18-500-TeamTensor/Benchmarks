@@ -96,7 +96,7 @@ def summary_string(model, input_size, batch_size=-1, device=torch.device('cuda:0
     trainable_params = 0
     layer_list = []
     for layer in summary:
-        print("What is layer: ", layer)
+        #print("What is layer: ", layer)
         layer_list.append(layer)
         '''
         
