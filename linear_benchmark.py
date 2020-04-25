@@ -44,10 +44,12 @@ class FC_M1(nn.Module):
 
         # Calculate the output size of the Flatten Layer
         # conv_dimensions(c_in, h_in, w_in, c_out, stride, pad, k_height, k_width)
-        self.fc = nn.Linear(20, 10)
+        self.fc = nn.Linear(20, 30)
+        self.fc2 = nn.Linear(30, 10)
 
     def forward(self, x):
-        x = self.fc(x)
+        x = self.relu(self.fc(x))
+        x = self.fc2(x)
         return x
 
     def model_string(self):
@@ -56,10 +58,12 @@ class FC_M1(nn.Module):
 class FC_M2(nn.Module):
     def __init__(self):
         super(FC_M2, self).__init__()
-        self.fc = nn.Linear(20, 10)
+        self.fc = nn.Linear(20, 40)
+        self.fc2 = nn.Linear(40, 10)
 
     def forward(self, x):
-        x = self.fc(x)
+        x = self.relu(self.fc(x))
+        x = self.fc2(x)
         return x
 
     def model_string(self):
@@ -69,10 +73,12 @@ class FC_M3(nn.Module):
     def __init__(self):
         super(FC_M3, self).__init__()
 
-        self.fc = nn.Linear(20, 10)
+        self.fc = nn.Linear(20, 50)
+        self.fc2 = nn.Linear(50, 10)
 
     def forward(self, x):
-        x = self.fc(x)
+        x = self.relu(self.fc(x))
+        x = self.fc2(x)
         return x
 
     def model_string(self):
@@ -82,11 +88,14 @@ class FC_M4(nn.Module):
     def __init__(self):
         super(FC_M4, self).__init__()
         self.fc1 = nn.Linear(20, 50)
-        self.fc2 = nn.Linear(50, 10)
+        self.fc2 = nn.Linear(50, 50)
+        self.fc3 = nn.Linear(50, 10)
 
     def forward(self, x):
-        x = self.fc1(x)
-        x = self.fc2(x)
+        x = self.relu(self.fc1(x))
+        x = self.relu(self.fc2(x))
+        x = self.fc3(x)
+
         return x
 
     def model_string(self):
@@ -97,11 +106,13 @@ class FC_M5(nn.Module):
         super(FC_M5, self).__init__()
 
         self.fc1 = nn.Linear(20, 50)
-        self.fc2 = nn.Linear(50, 10)
+        self.fc2 = nn.Linear(50, 60)
+        self.fc3 = nn.Linear(60, 10)
 
     def forward(self, x):
-        x = self.fc1(x)
-        x = self.fc2(x)
+        x = self.relu(self.fc1(x))
+        x = self.relu(self.fc2(x))
+        x = self.fc3(x)
         return x
 
     def model_string(self):
@@ -116,9 +127,9 @@ class FC_M6(nn.Module):
         self.fc4 = nn.Linear(50, 10)
 
     def forward(self, x):
-        x = self.fc1(x)
-        x = self.fc2(x)
-        x = self.fc3(x)
+        x = self.relu(self.fc1(x))
+        x = self.relu(self.fc2(x))
+        x = self.relu(self.fc3(x))
         x = self.fc4(x)
         return x
 
@@ -132,7 +143,7 @@ class FC_M7(nn.Module):
         self.fc2 = nn.Linear(50, 10)
 
     def forward(self, x):
-        x = self.fc1(x)
+        x = self.relu(self.fc1(x))
         x = self.fc2(x)
         return x
 
@@ -147,8 +158,8 @@ class FC_M8(nn.Module):
         self.fc3 = nn.Linear(50, 10)
 
     def forward(self, x):
-        x = self.fc1(x)
-        x = self.fc2(x)
+        x = self.relu(self.fc1(x))
+        x = self.relu(self.fc2(x))
         x = self.fc3(x)
         return x
 
