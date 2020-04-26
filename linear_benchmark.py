@@ -17,14 +17,28 @@ import torch.nn.functional as F
 
 """
 
+# The true function we are modeling
+def get_true_output(x):
+    y = torch.zeros(10)
+
+    y[0] = x[0]
+    y[1] = x[0]**2 + x[1]
+    y[2] = x[2]
+    y[3] = x[2] * x[3]
+    y[4] = x[3]**2 * x[4]
+    y[5] = x[5]
+    y[6] = y[6]**3
+    y[7] = y[7]
+    y[8] = torch.sqrt(y[8])
+    y[9] = torch.max((y[9]), 0.0)
+
 # Full color Data Pipeline -- process data points as they are
 def full_color(x):
     return x
 
 # Grayscale Data Pipeline -- convert points to 1-channel images
 def grayscale(x):
-    grayscale_transform = transforms.Grayscale(num_output_channels=1)
-    return transforms.ToTensor()(grayscale_transform(transforms.ToPILImage(mode='RGB')(x)))
+    return x[:10] - x[10:]
 
 """
 
@@ -40,7 +54,7 @@ class Flatten(nn.Module):
 class FC_M1(nn.Module):
     def __init__(self):
         super(FC_M1, self).__init__()
-
+        self.relu = nn.ReLU()
 
         # Calculate the output size of the Flatten Layer
         # conv_dimensions(c_in, h_in, w_in, c_out, stride, pad, k_height, k_width)
@@ -61,6 +75,8 @@ class FC_M2(nn.Module):
         self.fc = nn.Linear(20, 40)
         self.fc2 = nn.Linear(40, 10)
 
+        self.relu = nn.ReLU()
+
     def forward(self, x):
         x = self.relu(self.fc(x))
         x = self.fc2(x)
@@ -76,6 +92,8 @@ class FC_M3(nn.Module):
         self.fc = nn.Linear(20, 50)
         self.fc2 = nn.Linear(50, 10)
 
+        self.relu = nn.ReLU()
+
     def forward(self, x):
         x = self.relu(self.fc(x))
         x = self.fc2(x)
@@ -90,6 +108,8 @@ class FC_M4(nn.Module):
         self.fc1 = nn.Linear(20, 50)
         self.fc2 = nn.Linear(50, 50)
         self.fc3 = nn.Linear(50, 10)
+
+        self.relu = nn.ReLU()
 
     def forward(self, x):
         x = self.relu(self.fc1(x))
@@ -109,6 +129,8 @@ class FC_M5(nn.Module):
         self.fc2 = nn.Linear(50, 60)
         self.fc3 = nn.Linear(60, 10)
 
+        self.relu = nn.ReLU()
+
     def forward(self, x):
         x = self.relu(self.fc1(x))
         x = self.relu(self.fc2(x))
@@ -126,6 +148,8 @@ class FC_M6(nn.Module):
         self.fc3 = nn.Linear(100, 50)
         self.fc4 = nn.Linear(50, 10)
 
+        self.relu = nn.ReLU()
+
     def forward(self, x):
         x = self.relu(self.fc1(x))
         x = self.relu(self.fc2(x))
@@ -142,6 +166,8 @@ class FC_M7(nn.Module):
         self.fc1 = nn.Linear(20, 50)
         self.fc2 = nn.Linear(50, 10)
 
+        self.relu = nn.ReLU()
+
     def forward(self, x):
         x = self.relu(self.fc1(x))
         x = self.fc2(x)
@@ -156,6 +182,8 @@ class FC_M8(nn.Module):
         self.fc1 = nn.Linear(20, 100)
         self.fc2 = nn.Linear(100, 50)
         self.fc3 = nn.Linear(50, 10)
+
+        self.relu = nn.ReLU()
 
     def forward(self, x):
         x = self.relu(self.fc1(x))
@@ -173,6 +201,8 @@ class FC_M9(nn.Module):
         self.fc2 = nn.Linear(100, 100)
         self.fc3 = nn.Linear(100, 50)
         self.fc4 = nn.Linear(50, 10)
+
+        self.relu = nn.ReLU()
 
     def forward(self, x):
         x = self.relu(self.fc1(x))
@@ -193,6 +223,8 @@ class FC_M10(nn.Module):
         self.fc4 = nn.Linear(100, 50)
         self.fc5 = nn.Linear(50, 10)
 
+        self.relu = nn.ReLU()
+
     def forward(self, x):
         x = self.relu(self.fc1(x))
         x = self.relu(self.fc2(x))
@@ -209,6 +241,8 @@ class FC_M11(nn.Module):
         super(FC_M11, self).__init__()
         self.fc = nn.Linear(20, 10)
 
+        self.relu = nn.ReLU()
+
     def forward(self, x):
         x = self.fc(x)
         return x
@@ -222,6 +256,8 @@ class FC_M12(nn.Module):
 
         self.fc = nn.Linear(20, 10)
 
+        self.relu = nn.ReLU()
+
     def forward(self, x):
         x = self.fc(x)
         return x
@@ -234,6 +270,8 @@ class FC_M13(nn.Module):
         super(FC_M13, self).__init__()
 
         self.fc = nn.Linear(20, 10)
+
+        self.relu = nn.ReLU()
 
     def forward(self, x):
         x = self.fc(x)
@@ -251,6 +289,8 @@ class FC_M14(nn.Module):
         self.fc1 = nn.Linear(20, 500)
         self.fc2 = nn.Linear(500, 10)
 
+        self.relu = nn.ReLU()
+
     def forward(self, x):
         x = self.relu(self.fc1(x))
         x = self.fc2(x)
@@ -265,6 +305,8 @@ class FC_M15(nn.Module):
 
         self.fc1 = nn.Linear(20, 500)
         self.fc2 = nn.Linear(500, 10)
+
+        self.relu = nn.ReLU()
 
     def forward(self, x):
         x = self.relu(self.fc1(x))
@@ -285,6 +327,8 @@ class G_M1(nn.Module):
         super(G_M1, self).__init__()
         self.fc = nn.Linear(10, 10)
 
+        self.relu = nn.ReLU()
+
     def forward(self, x):
         x = self.fc(x)
         return x
@@ -296,6 +340,8 @@ class G_M2(nn.Module):
     def __init__(self):
         super(G_M2, self).__init__()
         self.fc = nn.Linear(10, 10)
+
+        self.relu = nn.ReLU()
 
     def forward(self, x):
         x = self.fc(x)
@@ -310,6 +356,8 @@ class G_M3(nn.Module):
 
         self.fc = nn.Linear(10, 10)
 
+        self.relu = nn.ReLU()
+
     def forward(self, x):
         x = self.fc(x)
         return x
@@ -322,6 +370,8 @@ class G_M4(nn.Module):
         super(G_M4, self).__init__()
         self.fc1 = nn.Linear(10, 50)
         self.fc2 = nn.Linear(50, 10)
+
+        self.relu = nn.ReLU()
 
     def forward(self, x):
         x = self.relu(self.fc1(x))
@@ -336,6 +386,8 @@ class G_M5(nn.Module):
         super(G_M5, self).__init__()
         self.fc1 = nn.Linear(10, 50)
         self.fc2 = nn.Linear(50, 10)
+
+        self.relu = nn.ReLU()
 
     def forward(self, x):
         x = self.pool(self.relu(self.conv1(x)))
@@ -356,6 +408,8 @@ class G_M6(nn.Module):
         self.fc3 = nn.Linear(100, 50)
         self.fc4 = nn.Linear(50, 10)
 
+        self.relu = nn.ReLU()
+
     def forward(self, x):
         x = self.relu(self.fc1(x))
         x = self.relu(self.fc2(x))
@@ -369,8 +423,10 @@ class G_M6(nn.Module):
 class G_M7(nn.Module):
     def __init__(self):
         super(G_M7, self).__init__()
-        self.fc1 = nn.Linear(10e, 50)
+        self.fc1 = nn.Linear(10, 50)
         self.fc2 = nn.Linear(50, 10)
+
+        self.relu = nn.ReLU()
 
     def forward(self, x):
         x = self.relu(self.fc1(x))
@@ -386,6 +442,8 @@ class G_M8(nn.Module):
         self.fc1 = nn.Linear(10, 100)
         self.fc2 = nn.Linear(100, 50)
         self.fc3 = nn.Linear(50, 10)
+
+        self.relu = nn.ReLU()
 
     def forward(self, x):
         x = self.relu(self.fc1(x))
@@ -403,6 +461,8 @@ class G_M9(nn.Module):
         self.fc2 = nn.Linear(100, 100)
         self.fc3 = nn.Linear(100, 50)
         self.fc4 = nn.Linear(50, 10)
+
+        self.relu = nn.ReLU()
 
     def forward(self, x):
         x = self.relu(self.fc1(x))
@@ -424,6 +484,8 @@ class G_M10(nn.Module):
         self.fc4 = nn.Linear(100, 50)
         self.fc5 = nn.Linear(50, 10)
 
+        self.relu = nn.ReLU()
+
     def forward(self, x):
         x = self.relu(self.fc1(x))
         x = self.relu(self.fc2(x))
@@ -441,6 +503,8 @@ class G_M11(nn.Module):
 
         self.fc = nn.Linear(10, 10)
 
+        self.relu = nn.ReLU()
+
     def forward(self, x):
         x = self.fc(x)
         return x
@@ -453,6 +517,8 @@ class G_M12(nn.Module):
         super(G_M12, self).__init__()
         self.fc = nn.Linear(10, 10)
 
+        self.relu = nn.ReLU()
+
     def forward(self, x):
         x = self.fc(x)
         return x
@@ -464,6 +530,8 @@ class G_M13(nn.Module):
     def __init__(self):
         super(G_M13, self).__init__()
         self.fc = nn.Linear(10, 10)
+
+        self.relu = nn.ReLU()
 
     def forward(self, x):
         x = self.fc(x)
@@ -478,6 +546,8 @@ class G_M14(nn.Module):
         self.fc1 = nn.Linear(10, 500)
         self.fc2 = nn.Linear(500, 10)
 
+        self.relu = nn.ReLU()
+
     def forward(self, x):
         x = self.relu(self.fc1(x))
         x = self.fc2(x)
@@ -491,6 +561,8 @@ class G_M15(nn.Module):
         super(G_M15, self).__init__()
         self.fc1 = nn.Linear(10, 500)
         self.fc2 = nn.Linear(500, 10)
+
+        self.relu = nn.ReLU()
 
     def forward(self, x):
         x = self.relu(self.fc1(x))
