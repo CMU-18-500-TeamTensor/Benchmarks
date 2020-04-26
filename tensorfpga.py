@@ -288,36 +288,45 @@ def send_content(content_list, worker):
     return 
 
 
+#similar to send_content, but sends a str over instead of a list
 def send_content_str(content_str, worker):
     tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     #board = (worker.worker_ip, worker.worker_port)
     tcp_socket.connect(("localhost",18500))
-    content_len = len(content_list)
+    msg_len = len(content_str)
+    #content_len = len(content_list)
     #print("content_len: ", content_len)
     #send total total elements, as well as size of total byte stream
-    total_elements = f'{len(content_list):<20}'
-    total_stream_size = f'{len(pickle.dumps(content_list)):<20}'
+    #total_elements = f'{len(content_list):<20}'
+    #total_stream_size = f'{len(pickle.dumps(content_list)):<20}'
     
     #print(total_elements, total_stream_size)
-    tcp_socket.send(bytes(total_elements, "utf-8"))
-    tcp_socket.send(bytes(total_stream_size, "utf-8"))
+    total_str_len = f'{len(content_str):<20}'
+    print("Sending msg_len: ", total_str_len)
+    tcp_socket.send(bytes(total_str_len, "utf-8")) #20 byte message
+    #tcp_socket.send(bytes(total_stream_size, "utf-8")) #20 byte message
     counter = 0
     #convert part of list to bytes stream, send small byte stream
     #convert back to list, add to final list
-    print("Total_elements, stream size: ", total_elements, total_stream_size)
-    while (counter < content_len):
+    #print("Total_elements, stream size: ", total_elements, total_stream_size)
+    while (counter < msg_len):
         lower_bound = counter
-        upper_bound = min(counter+1000, content_len)
+        upper_bound = min(counter+1000, msg_len)
         #print(lower_bound, upper_bound)
-        model_fragment = content_list[lower_bound:upper_bound]
+        model_fragment = content_str[lower_bound:upper_bound]
+        fragment_size = len(content_str)
+        small_msg = model_fragment.encode()
         #print("model_fragment: ", model_fragment)
-        content_pickle = pickle.dumps(model_fragment)
-        msgsize = f'{len(content_pickle):<20}'
+        #content_pickle = pickle.dumps(model_fragment)
+        #msgsize = f'{len(content_pickle):<20}'
         #send how many bytes are going to be sent first
-        value = tcp_socket.send(bytes(msgsize, "utf-8"))
+        value = tcp_socket.send(small_msg)
+        #print("How many bytes were sent: ", value)
         #send the fragment
-        value = tcp_socket.send(content_pickle)
+
+        #value = tcp_socket.send(content_pickle)
         counter = upper_bound
+    print("Total bytes sent: ", counter)
     print("Finished sending content")
     tcp_socket.close()
     return 
@@ -340,8 +349,10 @@ def list_to_hex(packet_list):
     #print(f32_type, uint32_type)
     hex_val = ""
 
-    for i in range(len(packet_list)):
-        element = packet_list[i]
+    for i in range(len(packet_list),0,-1):
+        #print("what is packet_list[i]: ", packet_list[i-1])
+        
+        element = packet_list[i-1]
         element_type = type(element)
         #print(element, element_type)
         if(element_type == f32_type):
@@ -350,7 +361,8 @@ def list_to_hex(packet_list):
             hex_val = int_to_hex(element)
         #print("what is hex_val: ", hex_val)
         hex_string += hex_val
-    print(hex_string)
+        
+    #print(hex_string)
     return hex_string
     
     
@@ -368,21 +380,6 @@ def write_content_to_file(id, hex_string):
 #Sends one model to the board specified
 def send_model(model, worker, model_id):
 
-    #Int tensor to use for verification purposes
-    '''
-    kernelTensor = [[[[1,2],[3,4],[5,6]],
-                [[7,8],[9,10],[11,12]],
-                [[13,14],[15,16],[17,18]],
-                [[19,20],[21,22],[23,24]]],
-                [[[25,26],[27,28],[29,30]],
-                [[31,32],[33,34],[35,36]],
-                [[37,38],[39,40],[41,42]],
-                [[43,44],[45,46],[47,48]]]]
-
-    linear_tensor = [[1,2],[3,4],[5,6]]
-
-    biasTensor = [1,2,3]
-    '''
 
     #Holds the model information
     packet_list = []
@@ -392,16 +389,7 @@ def send_model(model, worker, model_id):
     class_name = str(model.__class__).split(".")[-1].split("'")[0]
     print("what is model.__class__", str(model.__class__))
     print("What is class_name: ", class_name)
-    #print("model layers retrieved")
-    #USE INTEGERS WHERE YOU CAN
-    #numpy.uint32(5)
-    '''
-    packet_list.append(f32(5.0)) #opcode for 
-    packet_list.append(f32(0.0)) #pipeline id
-    packet_list.append(f32(14.0)) #model id
-    #instead of number of layers, append the total size of the model
-    packet_list.append(f32((len(layer_list)))) #number of layers
-    '''
+    
     packet_list.append(numpy.uint32(5))
     packet_list.append(numpy.uint32(0))
     #chagne this to actually use the model #
@@ -440,7 +428,8 @@ def send_model(model, worker, model_id):
     string_bytes = list_to_hex(packet_list)
     write_content_to_file(model_id, string_bytes)
     #print("what is string_bytes: ", string_bytes)
-    send_content(packet_list, worker)
+    #send_content(packet_list, worker)
+    send_content_str(string_bytes, worker)
     time_finish = now()
     print("Time to send model: ", time_finish-time_start)
     print("Finished sending the model")
@@ -667,7 +656,8 @@ def main():
     packet_list = []
     for i in range(10):
         packet_list.append(numpy.uint32(i))        
-    print("what is packet_list len: ", len(packet_list))
+    #print("what is packet_list len: ", len(packet_list))
+    print("What is packet_list: ", packet_list)
     '''
     worker = Worker("Board1", "localhost", 18500)
     send_content(packet_list, worker)

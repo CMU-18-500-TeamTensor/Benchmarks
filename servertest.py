@@ -64,6 +64,47 @@ def read_content(IP,PORT):
     #print("looks goood to me")
     tcp_socket.close()
     return
+
+#Note: similiar to read_content, but uses string instead of list
+def read_content_new(IP,PORT):
+    #TCP FROM THIS POINT FORWARD
+    board_1 = (IP, PORT)
+    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    tcp_socket.bind(("localhost",18500))
+    tcp_socket.listen(5)
+
+    
+    clientsocket, address = tcp_socket.accept()
+    print(f"Connection from {address} has been established")
+    msg_len = int(clientsocket.recv(20).decode("utf-8"))
+    print("What is msg_size: ", msg_len)
+    #msg2 = clientsocket.recv(20)
+    #total_elements = int(msg1.decode("utf-8"))
+    #total_stream_size = int(msg2.decode("utf-8"))
+
+    #print("Total_elements, stream size: ", total_elements, total_stream_size)
+    counter = 0
+    
+    model_msg = ""
+    while(counter < msg_len):
+        lower_bound = counter
+        upper_bound = min(counter+1000, msg_len)
+        #print(lower_bound, upper_bound)
+        
+        #bytes_to_read = int(clientsocket.recv(20).decode("utf-8"))
+        small_fragment = clientsocket.recv(1000).decode()
+        #model_pickle = clientsocket.recv(bytes_to_read)
+        #model_fragment = pickle.loads(model_pickle)
+        #print("Model_fragment: ", model_fragment)
+        #print("Size of small fragment: ", len(small_fragment))
+        model_msg += small_fragment
+        #print("total len of model_msg: ", len(model_msg))
+        #model_msg.extend(model_fragment)
+        counter = upper_bound
+    print("Received this many total bytes: ", msg_len, counter)
+    #print("looks goood to me")
+    tcp_socket.close()
+    return
     
 
 #Hosts server, waits for incoming call
@@ -73,7 +114,8 @@ def main(IP, PORT):
     print("Boards retrieved, attempting to get model info")
     #called 30 times to get each model
     for i in range(30):
-        read_content(IP,PORT)
+        #read_content(IP,PORT)
+        read_content_new(IP,PORT)
     print("Model info retrieved, attempting to get data")
     #called another time to get the data
     #for i in range(50000):
