@@ -390,20 +390,23 @@ def send_model(model, worker, model_id):
     print("what is model.__class__", str(model.__class__))
     print("What is class_name: ", class_name)
     
+    total_model_size = 0
     packet_list.append(numpy.uint32(5))
     packet_list.append(numpy.uint32(0))
     #chagne this to actually use the model #
     packet_list.append(numpy.uint32(model_id))
     #change this to use the actual size of the model
     #print("what is int32 of model_size: ", numpy.uint32(t_model_size))
-    packet_list.append(numpy.uint32(t_model_size)) #size of model in word count
+    #packet_list.append(numpy.uint32(t_model_size)) #size of model in word count #4th item should be replaced, 958 words is the magic number
+    packet_list.append(0) #Hard coding arbitrary value now, will put correct value later in the code
     packet_list.append(numpy.uint32(len(layer_list))) #of layers in a model
-
+    total_model_size += 5 #for the header stuff
     specialCounter = 0
     #print("What is len of packet_list: ", len(packet_list))
     for layer in layer_list:
         if(layer == "ReLU"):
             packet_list.append(numpy.uint32(3)) #op code for ReLU layer
+            total_model_size += 1
             #packet_list.append(f32(3)) #op code for ReLU layer
         elif(layer == "Linear"):
             kernelTensor = special_layer_list[specialCounter][0]
@@ -414,10 +417,13 @@ def send_model(model, worker, model_id):
             #packet_str += "1,"
             serializedKernel = tensor_to_list(kernelTensor,2)
             serializedBias = tensor_to_list(biasTensor,1)
+            total_model_size += len(serializedKernel) + len(serializedBias) + 1 #1 is for the opcode length
             #print("What is len of serializedKernel: ", len(serializedKernel))
             #print("What is len of serializedBias: ", len(serializedBias))
             packet_list.extend(serializedKernel)
             packet_list.extend(serializedBias)
+    packet_list[3] = total_model_size
+    print("What is the model size: ", total_model_size)
     #print("What is len of packet_list: ", len(packet_list))
     myType = type(packet_list[0])
     #print(myType)

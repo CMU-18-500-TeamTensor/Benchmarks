@@ -576,9 +576,9 @@ class G_M15(nn.Module):
 """
 
     DP<->Model relationships
-
 """
-#bench_suite = {"full_color": (full_color, [FC_M14])}
+
+#bench_suite = {"full_color": (full_color, [FC_M1, FC_M14])}
 #bench_suite = {"grayscale": (grayscale, [G_M14])}
 
 
@@ -586,4 +586,6 @@ class G_M15(nn.Module):
 
 bench_suite = {"full_color": (full_color, [FC_M1, FC_M2, FC_M3, FC_M4, FC_M5, FC_M6, FC_M7, FC_M8, FC_M9, FC_M10, FC_M11, FC_M12, FC_M13, FC_M14, FC_M15]),
             "grayscale":  (grayscale,  [G_M1,  G_M2,  G_M3,  G_M4,  G_M5,  G_M6, G_M7,  G_M8,  G_M9,  G_M10,  G_M11,  G_M12,  G_M13,  G_M14,  G_M15])}
+
+
 
