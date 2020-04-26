@@ -396,7 +396,8 @@ def send_model(model, worker, model_id):
     packet_list.append(numpy.uint32(model_id))
     #change this to use the actual size of the model
     #print("what is int32 of model_size: ", numpy.uint32(t_model_size))
-    packet_list.append(numpy.uint32(t_model_size))
+    packet_list.append(numpy.uint32(t_model_size)) #size of model in word count
+    packet_list.append(numpy.uint32(len(layer_list))) #of layers in a model
 
     specialCounter = 0
     #print("What is len of packet_list: ", len(packet_list))
@@ -429,7 +430,7 @@ def send_model(model, worker, model_id):
     write_content_to_file(model_id, string_bytes)
     #print("what is string_bytes: ", string_bytes)
     #send_content(packet_list, worker)
-    send_content_str(string_bytes, worker)
+    #send_content_str(string_bytes, worker)
     time_finish = now()
     print("Time to send model: ", time_finish-time_start)
     print("Finished sending the model")

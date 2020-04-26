@@ -14,6 +14,7 @@ import torchvision.transforms as transforms
 import torch.optim as optim
 
 import time
+import multiprocessing
 
 def now():
     return int(round(time.time() * 1000))
@@ -35,6 +36,58 @@ def get_CIFAR10_dataset():
 #import torch.nn.functional as F
 
 
+
+statistics = []
+for i in range(30):
+    statistics.append("")
+
+def train_model(model, model_counter, trainloader,device):
+    print("Starting with first model")
+    time_to_train = now()
+    # Train this model   
+    net = model().to(device)
+    epoch = 0
+    #should be mean squared error
+    criterion = nn.MSELoss()
+    #criterion = nn.CrossEntropyLoss()
+    optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+    running_loss = 0.0
+    print("Beginning training now")
+    for i, data in enumerate(trainloader, 0):
+        #print("How often do we loop through this: ", i)
+        # get the inputs; data is a list of [inputs, labels]
+        #inputs,labels = data
+        #inputs = torch.stack([pipeline_fn(inputs[i]) for i in range(inputs.shape[0])])
+        
+        #inputs, labels = data[0], data[1].to(device) #.to(device), data[1].to(device)
+        #inputs = torch.stack([pipeline_fn(inputs[i]) for i in range(inputs.shape[0])]).to(device)
+        if(model_counter//15 == 0):
+            inputs = torch.rand(20).to(device)
+        else:
+            inputs = torch.rand(10).to(device)
+        labels = get_true_output(inputs).to(device)
+        # zero the parameter gradients
+        optimizer.zero_grad()
+
+        # forward + backward + optimize
+        outputs = net(inputs)
+        loss = criterion(outputs, labels)
+        loss.backward()
+        optimizer.step()
+
+        # print statistics
+        running_loss += loss.item()
+        if i % 2000 == 1999:    # print every 2000 mini-batches
+            print('[%d, %5d] loss: %.3f' %
+                  (epoch + 1, i + 1, running_loss / 2000))
+            running_loss = 0.0
+    time_to_finish = now() - time_to_train
+    print('Finished Training: %s' % net.model_string())
+    print('Time for model: ', time_to_finish);
+    statistics[model_counter] = (("Time taken: %.3f seconds, Loss value: %.3f" % (time_to_finish/1000, running_loss)), time_to_finish)
+    #return ("Time taken: %.3f seconds, Loss value: %.3f" % (time_to_finish/1000, running_loss)), time_to_finish
+    #statistics.append("Time taken: %.3f seconds, Loss value: %.3f" % (time_to_finish/1000, running_loss));
+
 def main(device):
     num_epochs = 1
 
@@ -43,63 +96,104 @@ def main(device):
     avg_time = 0
     trainloader = get_CIFAR10_dataset()
 
-    statistics = []
+    model_counter = 0
+    workers = []
     for data_pipeline in bench_suite.keys():
         print("Iterating through pipeline")
         pipeline_fn, models = bench_suite[data_pipeline]
+
         for model in models:
-            print("Starting with first model")
-            time_to_train = now()
-            num_models_trained += 1
-            # Train this model
+            # split into individual processes here
+            #train_model(model,model_counter)
+            workers.append(multiprocessing.Process(target=train_model,args=(model,model_counter,trainloader,device)))
+            model_counter+=1
 
-           
-            net = model().to(device)
-            
-            #should be mean squared error
-            criterion = nn.MSELoss()
-            #criterion = nn.CrossEntropyLoss()
-            optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+    for i in range(len(workers)):
+        print(i, workers[i])
+    #all models have been added to worker list, run two processes at a time
 
-            for epoch in range(num_epochs):  # loop over the dataset multiple times
+    num_processes = 5
+    # range should be 30/# of procceses
+    for i in range(0,30, 5):
+        worker1 = workers[i]
+        worker2 = workers[i+1]
+        worker3 = workers[i+2]
+        worker4 = workers[i+3]
+        worker5 = workers[i+4]
+        worker1.start()
+        worker2.start()
+        worker3.start()
+        worker4.start()
+        worker5.start()
+        worker1.join()
+        worker2.join()
+        worker3.join()
+        worker4.join()
+        worker5.join()
 
-                running_loss = 0.0
-                print("Beginning training now")
-                for i, data in enumerate(trainloader, 0):
-                    #print("How often do we loop through this: ", i)
-                    # get the inputs; data is a list of [inputs, labels]
-                    #inputs,labels = data
-                    #inputs = torch.stack([pipeline_fn(inputs[i]) for i in range(inputs.shape[0])])
-                    
-                    #inputs, labels = data[0], data[1].to(device) #.to(device), data[1].to(device)
-                    #inputs = torch.stack([pipeline_fn(inputs[i]) for i in range(inputs.shape[0])]).to(device)
+    for i in range(len(statistics)):
+        element = statistics[i]
+        avg_time += element[1]
+        print("Model %d stats: %s" % (i+1,element[0]))
+    #print(element[0])
+    '''
+        print("Starting with first model")
+        time_to_train = now()
+        num_models_trained += 1
+        # Train this model
+
+       
+        net = model().to(device)
+        
+        #should be mean squared error
+        criterion = nn.MSELoss()
+        #criterion = nn.CrossEntropyLoss()
+        optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+
+        for epoch in range(num_epochs):  # loop over the dataset multiple times
+
+            running_loss = 0.0
+            print("Beginning training now")
+            for i, data in enumerate(trainloader, 0):
+                #print("How often do we loop through this: ", i)
+                # get the inputs; data is a list of [inputs, labels]
+                #inputs,labels = data
+                #inputs = torch.stack([pipeline_fn(inputs[i]) for i in range(inputs.shape[0])])
+                
+                #inputs, labels = data[0], data[1].to(device) #.to(device), data[1].to(device)
+                #inputs = torch.stack([pipeline_fn(inputs[i]) for i in range(inputs.shape[0])]).to(device)
+                if(model_counter//15 == 0):
                     inputs = torch.rand(20).to(device)
-                    labels = get_true_output(inputs).to(device)
-                    # zero the parameter gradients
-                    optimizer.zero_grad()
+                else:
+                    inputs = torch.rand(10).to(device)
+                labels = get_true_output(inputs).to(device)
+                # zero the parameter gradients
+                optimizer.zero_grad()
 
-                    # forward + backward + optimize
-                    outputs = net(inputs)
-                    loss = criterion(outputs, labels)
-                    loss.backward()
-                    optimizer.step()
+                # forward + backward + optimize
+                outputs = net(inputs)
+                loss = criterion(outputs, labels)
+                loss.backward()
+                optimizer.step()
 
-                    # print statistics
-                    running_loss += loss.item()
-                    if i % 2000 == 1999:    # print every 2000 mini-batches
-                        print('[%d, %5d] loss: %.3f' %
-                              (epoch + 1, i + 1, running_loss / 2000))
-                        running_loss = 0.0
-                time_to_finish = now() - time_to_train
-                print('Finished Training: %s' % net.model_string())
-                print('Time for model: ', time_to_finish);
-                avg_time += time_to_finish
-                statistics.append("Time taken: %.3f seconds, Loss value: %.3f" % (time_to_finish/1000, running_loss));
+                # print statistics
+                running_loss += loss.item()
+                if i % 2000 == 1999:    # print every 2000 mini-batches
+                    print('[%d, %5d] loss: %.3f' %
+                          (epoch + 1, i + 1, running_loss / 2000))
+                    running_loss = 0.0
+            time_to_finish = now() - time_to_train
+            print('Finished Training: %s' % net.model_string())
+            print('Time for model: ', time_to_finish);
+            avg_time += time_to_finish
+            statistics.append("Time taken: %.3f seconds, Loss value: %.3f" % (time_to_finish/1000, running_loss));
+            model_counter += 1
+    '''
 
     time_taken = now() - birthday
 
-    throughput = num_models_trained / time_taken
-    avg_time = avg_time/(1000 * num_models_trained)
+    throughput = model_counter / time_taken
+    avg_time = avg_time/(1000 * model_counter)
     print("Trained models with an average throughput of %f" % (throughput * 1000000))
     print("Trained models at an average time of %.3f seconds" % (avg_time))
 
