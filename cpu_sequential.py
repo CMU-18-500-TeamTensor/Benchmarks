@@ -1,4 +1,6 @@
-from benchmark import bench_suite
+#from benchmark import bench_suite
+from linear_benchmark import bench_suite
+from linear_benchmark import get_true_output
 from torchsummary import summary 
 
 import torch
@@ -6,6 +8,7 @@ import torchvision
 import torchvision.transforms as transforms
 
 import torch.optim as optim
+import numpy as np
 
 import time
 
@@ -24,71 +27,83 @@ trainloader = torch.utils.data.DataLoader(trainset, batch_size=4,
 import torch.nn as nn
 import torch.nn.functional as F
 
-num_epochs = 1
+def main():
+    num_epochs = 1
 
-birthday = now()
-num_models_trained = 0
-avg_time = 0
+    birthday = now()
+    num_models_trained = 0
+    avg_time = 0
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-statistics = []
-for data_pipeline in bench_suite.keys():
-    pipeline_fn, models = bench_suite[data_pipeline]
-    for model in models:
-        print("Starting a new model, statistics below: ")
-        time_to_train = now()
-        num_models_trained += 1
-        # Train this model
+    statistics = []
+    for data_pipeline in bench_suite.keys():
+        pipeline_fn, models = bench_suite[data_pipeline]
+        for model in models:
+            print("Starting a new model, statistics below: ")
+            time_to_train = now()
+            num_models_trained += 1
+            # Train this model
 
-        net = model()
-        summary(net, (3,32,32))
+            print("Type of model: ", model)
+            net = model()#.to(device)
+            print("Type of model now: ", net)
+            #net.to(device)
+            print("final type of model: ", net)
+            #summary(net, (3,32,32))
 
-        #SHould be mean squared error
-        criterion = nn.CrossEntropyLoss()
-        optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+            #SHould be mean squared error
+            criterion = nn.MSELoss()
+            #criterion = nn.CrossEntropyLoss()
+            optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
-        for epoch in range(num_epochs):  # loop over the dataset multiple times
+            for epoch in range(num_epochs):  # loop over the dataset multiple times
 
-            running_loss = 0.0
-            for i, data in enumerate(trainloader, 0):
-                # get the inputs; data is a list of [inputs, labels]
-                inputs, labels = data
-                print("What is inputs: ", inputs)
-                print("\n\n\n")
-                print("What is labels: ", labels)
-                inputs = torch.stack([pipeline_fn(inputs[i]) for i in range(inputs.shape[0])])
+                running_loss = 0.0
+                for i, data in enumerate(trainloader, 0):
+                    # get the inputs; data is a list of [inputs, labels]
+                    inputs, labels = data
+                    #print("What is inputs: ", inputs)
+                    #print("\n\n\n")
+                    #print("What is labels: ", labels)
+                    #inputs = torch.stack([pipeline_fn(inputs[i]) for i in range(inputs.shape[0])])
+                    inputs = torch.rand(20)
+                    labels = get_true_output(inputs)
+                    
+                    # zero the parameter gradients
+                    optimizer.zero_grad()
 
-                # zero the parameter gradients
-                optimizer.zero_grad()
+                    # forward + backward + optimize
+                    outputs = net(inputs)
+                    loss = criterion(outputs, labels)
+                    loss.backward()
+                    optimizer.step()
 
-                # forward + backward + optimize
-                outputs = net(inputs)
-                loss = criterion(outputs, labels)
-                loss.backward()
-                optimizer.step()
+                    # print statistics
+                    running_loss += loss.item()
+                    if i % 2000 == 1999:    # print every 2000 mini-batches
+                        print('[%d, %5d] loss: %.3f' %
+                              (epoch + 1, i + 1, running_loss / 2000))
+                        running_loss = 0.0
+                time_to_finish = now() - time_to_train
+                print('Finished Training: %s' % net.model_string())
+                print('Time for model: ', time_to_finish);
+                avg_time += time_to_finish
+                statistics.append("Time taken: %.3f seconds, Loss value: %.3f" % (time_to_finish/1000, running_loss));
 
-                # print statistics
-                running_loss += loss.item()
-                if i % 2000 == 1999:    # print every 2000 mini-batches
-                    print('[%d, %5d] loss: %.3f' %
-                          (epoch + 1, i + 1, running_loss / 2000))
-                    running_loss = 0.0
-            time_to_finish = now() - time_to_train
-            print('Finished Training: %s' % net.model_string())
-            print('Time for model: ', time_to_finish);
-            avg_time += time_to_finish
-            statistics.append("Time taken: %.3f seconds, Loss value: %.3f" % (time_to_finish/1000, running_loss));
+    time_taken = now() - birthday
 
-time_taken = now() - birthday
+    throughput = num_models_trained / time_taken
+    avg_time = avg_time/(1000 * num_models_trained)
+    print("Trained models with an average throughput of %f" % (throughput * 1000000))
+    print("Trained models at an average time of %.3f seconds" % (avg_time))
 
-throughput = num_models_trained / time_taken
-avg_time = avg_time/(1000 * num_models_trained)
-print("Trained models with an average throughput of %f" % (throughput * 1000000))
-print("Trained models at an average time of %.3f seconds" % (avg_time))
-
-for i in range(len(statistics)):
-    print("Model %d stats: %s" % (i+1,statistics[i]))
+    for i in range(len(statistics)):
+        print("Model %d stats: %s" % (i+1,statistics[i]))
 
 
+
+if __name__ == '__main__':
+    main()
 '''
 Statistics 
 Hardware: 3.1 GHz Intel Core i5

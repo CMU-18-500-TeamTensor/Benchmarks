@@ -14,7 +14,8 @@ from tensorfpga import train_models
 
 # Anything from userprovided library is written by the end user.
 #from userprovided import get_CIFAR10_dataset
-from benchmark import bench_suite
+from linear_benchmark import bench_suite
+#from benchmark import bench_suite
 
 # Third party library functio
 from torchsummary import summary
@@ -38,6 +39,13 @@ def get_CIFAR10_dataset():
                                           shuffle=True, num_workers=2)
     return trainloader
 
+def generate_mydataset():
+	data_list = []
+	for i in range(50000):
+		data_list[i] = torch.rand(20)
+	return data_list
+
+
 # Data pipelines defined by the user, written here for clarity
 def dp1(x):
     return x.grayscale()
@@ -59,6 +67,7 @@ def main():
 
 	#user function to pull dataset
 	trainloader = get_CIFAR10_dataset() # iterable over tuples (x, y)
+
 
 	#grab the whole model list, in this scenario just one model
 	model_list = bench_suite
@@ -82,6 +91,7 @@ def main():
 		dpm.add_model(fc_model, dp_id1)
 		dpm.add_model(gc_model, dp_id2)
 	
+	#dpm.print_pipelines()
 	#Once all the models have been added to their respective pipelines and the data
 	#has been pulled, we begin training the models
 	#my_model = model1().to(0)

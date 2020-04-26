@@ -30,7 +30,8 @@ def get_true_output(x):
     y[6] = y[6]**3
     y[7] = y[7]
     y[8] = torch.sqrt(y[8])
-    y[9] = torch.max((y[9]), 0.0)
+    y[9] = y[9] if y[9] > 0 else 0.0
+    return y
 
 # Full color Data Pipeline -- process data points as they are
 def full_color(x):
@@ -390,9 +391,9 @@ class G_M5(nn.Module):
         self.relu = nn.ReLU()
 
     def forward(self, x):
-        x = self.pool(self.relu(self.conv1(x)))
-        x = self.pool(self.relu(self.conv2(x)))
-        x = self.flatten(x)
+        #x = self.relu()
+        #x = self.relu(self.conv2(x))
+        #x = self.flatten(x)
         x = self.relu(self.fc1(x))
         x = self.fc2(x)
         return x
@@ -478,8 +479,8 @@ class G_M10(nn.Module):
     def __init__(self):
         super(G_M10, self).__init__()
 
-        self.fc1 = nn.Linear(flatten_size, 100)
-        self.fc2 = nn.Linear(10, 100)
+        self.fc1 = nn.Linear(10, 100)
+        self.fc2 = nn.Linear(100, 100)
         self.fc3 = nn.Linear(100, 100)
         self.fc4 = nn.Linear(100, 50)
         self.fc5 = nn.Linear(50, 10)
@@ -585,3 +586,4 @@ class G_M15(nn.Module):
 
 bench_suite = {"full_color": (full_color, [FC_M1, FC_M2, FC_M3, FC_M4, FC_M5, FC_M6, FC_M7, FC_M8, FC_M9, FC_M10, FC_M11, FC_M12, FC_M13, FC_M14, FC_M15]),
             "grayscale":  (grayscale,  [G_M1,  G_M2,  G_M3,  G_M4,  G_M5,  G_M6, G_M7,  G_M8,  G_M9,  G_M10,  G_M11,  G_M12,  G_M13,  G_M14,  G_M15])}
+

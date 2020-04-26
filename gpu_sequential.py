@@ -1,7 +1,9 @@
 #Tests on local machine GPU (CURRENTLY NOT WORKING)
 
 
-from benchmark import bench_suite
+#from benchmark import bench_suite
+from linear_benchmark import bench_suite
+from linear_benchmark import get_true_output
 #from torchsummary import summary
 from modelsummaryimport import summary
 
@@ -51,14 +53,12 @@ def main(device):
             num_models_trained += 1
             # Train this model
 
-            #net = model()
-            #print("What is net: ", net)
+           
             net = model().to(device)
-            print("What is net now: ", net)
-            summary(net, (3,32,32))
             
-
-            criterion = nn.CrossEntropyLoss()
+            #should be mean squared error
+            criterion = nn.MSELoss()
+            #criterion = nn.CrossEntropyLoss()
             optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
             for epoch in range(num_epochs):  # loop over the dataset multiple times
@@ -66,13 +66,15 @@ def main(device):
                 running_loss = 0.0
                 print("Beginning training now")
                 for i, data in enumerate(trainloader, 0):
+                    #print("How often do we loop through this: ", i)
                     # get the inputs; data is a list of [inputs, labels]
                     #inputs,labels = data
                     #inputs = torch.stack([pipeline_fn(inputs[i]) for i in range(inputs.shape[0])])
                     
-                    inputs, labels = data[0], data[1].to(device) #.to(device), data[1].to(device)
-                    inputs = torch.stack([pipeline_fn(inputs[i]) for i in range(inputs.shape[0])]).to(device)
-
+                    #inputs, labels = data[0], data[1].to(device) #.to(device), data[1].to(device)
+                    #inputs = torch.stack([pipeline_fn(inputs[i]) for i in range(inputs.shape[0])]).to(device)
+                    inputs = torch.rand(20).to(device)
+                    labels = get_true_output(inputs).to(device)
                     # zero the parameter gradients
                     optimizer.zero_grad()
 

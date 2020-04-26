@@ -71,8 +71,8 @@ def main(IP, PORT):
     print("Attempting to retrieve boards")
     #get_boards(IP, PORT)
     print("Boards retrieved, attempting to get model info")
-    #called 15 times to get each model
-    for i in range(15):
+    #called 30 times to get each model
+    for i in range(30):
         read_content(IP,PORT)
     print("Model info retrieved, attempting to get data")
     #called another time to get the data

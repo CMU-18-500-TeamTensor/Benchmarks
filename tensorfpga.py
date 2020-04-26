@@ -4,6 +4,8 @@ import pickle
 import sys
 import numpy
 import time
+import torch
+import struct
 
 from modeldetailshelper import summary
 
@@ -200,6 +202,21 @@ def f32(float_num):
 def now():
     return int(round(time.time() * 1000))
 
+def get_true_output(x):
+    y = torch.zeros(10)
+
+    y[0] = x[0]
+    y[1] = x[0]**2 + x[1]
+    y[2] = x[2]
+    y[3] = x[2] * x[3]
+    y[4] = x[3]**2 * x[4]
+    y[5] = x[5]
+    y[6] = y[6]**3
+    y[7] = y[7]
+    y[8] = torch.sqrt(y[8])
+    y[9] = y[9] if y[9] > 0 else 0.0
+    return y
+
 
 #Using UPD, send out broadcast to detect what boards are available
 #Returns a lit of available boards
@@ -271,6 +288,83 @@ def send_content(content_list, worker):
     return 
 
 
+def send_content_str(content_str, worker):
+    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    #board = (worker.worker_ip, worker.worker_port)
+    tcp_socket.connect(("localhost",18500))
+    content_len = len(content_list)
+    #print("content_len: ", content_len)
+    #send total total elements, as well as size of total byte stream
+    total_elements = f'{len(content_list):<20}'
+    total_stream_size = f'{len(pickle.dumps(content_list)):<20}'
+    
+    #print(total_elements, total_stream_size)
+    tcp_socket.send(bytes(total_elements, "utf-8"))
+    tcp_socket.send(bytes(total_stream_size, "utf-8"))
+    counter = 0
+    #convert part of list to bytes stream, send small byte stream
+    #convert back to list, add to final list
+    print("Total_elements, stream size: ", total_elements, total_stream_size)
+    while (counter < content_len):
+        lower_bound = counter
+        upper_bound = min(counter+1000, content_len)
+        #print(lower_bound, upper_bound)
+        model_fragment = content_list[lower_bound:upper_bound]
+        #print("model_fragment: ", model_fragment)
+        content_pickle = pickle.dumps(model_fragment)
+        msgsize = f'{len(content_pickle):<20}'
+        #send how many bytes are going to be sent first
+        value = tcp_socket.send(bytes(msgsize, "utf-8"))
+        #send the fragment
+        value = tcp_socket.send(content_pickle)
+        counter = upper_bound
+    print("Finished sending content")
+    tcp_socket.close()
+    return 
+
+
+
+def int_to_hex(int):
+    return str(hex(int))[2:].zfill(8)
+
+def float_to_hex(float):
+    return str(hex(struct.unpack('<I', struct.pack('<f', float))[0]))[2:]
+
+def list_to_hex(packet_list):
+    hex_string = ""
+    hex_val = ""
+    #print("what is float_to_hex of 5.0: ", float_to_hex(f32(5.0)))
+    #print("what is int_to_hex of 5:", int_to_hex(numpy.uint32(5)))
+    f32_type = type(f32(5.0))
+    uint32_type = type(numpy.uint32(5))
+    #print(f32_type, uint32_type)
+    hex_val = ""
+
+    for i in range(len(packet_list)):
+        element = packet_list[i]
+        element_type = type(element)
+        #print(element, element_type)
+        if(element_type == f32_type):
+            hex_val = float_to_hex(element)
+        if(element_type == uint32_type):
+            hex_val = int_to_hex(element)
+        #print("what is hex_val: ", hex_val)
+        hex_string += hex_val
+    print(hex_string)
+    return hex_string
+    
+    
+
+def write_content_to_file(id, hex_string):
+    filename = "model_" + str(id) + ".txt"
+    print(filename)
+    file = open(filename, "w")
+    file.write(hex_string)
+    file.close()
+
+
+
+
 #Sends one model to the board specified
 def send_model(model, worker, model_id):
 
@@ -294,7 +388,7 @@ def send_model(model, worker, model_id):
     packet_list = []
     
     #Do this function today
-    layer_list, special_layer_list, t_model_size = get_model_layers(model)
+    layer_list, special_layer_list, t_model_size = get_model_layers(model, model_id)
     class_name = str(model.__class__).split(".")[-1].split("'")[0]
     print("what is model.__class__", str(model.__class__))
     print("What is class_name: ", class_name)
@@ -339,18 +433,13 @@ def send_model(model, worker, model_id):
     myType = type(packet_list[0])
     #print(myType)
     
-    #make sure every element in packet_list is the same type "<class 'numpy.float32'>"
-    ''''
-    for i in range(len(packet_list)):
-        element = packet_list[i]
-        if(type(element) != myType):
-            print(type(element), myType, i)
-            print("Type mismatch, exiting!")
-            exit(1)
-    '''
-    #print("Looks good to me")
+
     print("Sending model to RaspPi")
     time_start = now()
+    #print("What is packet_list: ", packet_list)
+    string_bytes = list_to_hex(packet_list)
+    write_content_to_file(model_id, string_bytes)
+    #print("what is string_bytes: ", string_bytes)
     send_content(packet_list, worker)
     time_finish = now()
     print("Time to send model: ", time_finish-time_start)
@@ -372,12 +461,12 @@ def send_data(trainloader, worker):
     for i, data in enumerate(trainloader, 0):
         print("New data batch: ", i)
         if (counter == 0):
-            inputs, labels = data
+            #inputs, labels = data
+            inputs = torch.rand(20)
+            labels = get_true_output(inputs)
             #print(type(inputs))
             input_list = inputs.numpy().tolist()
-            #print(type(input_list))
-            #print(type(labels))
-            serializedInput = tensor_to_list(input_list,4)
+            serializedInput = tensor_to_list(input_list,1)
             #print(type(serializedInput[0]))
             data_list.extend(serializedInput)
             #convert from tensor to list
@@ -492,10 +581,13 @@ def tensor_to_list(tensor, maxDim):
 
 
 #Given a model, returns a list of all of the layers in the order that they appear
-def get_model_layers(model):
+def get_model_layers(model, model_id):
     #layer lists holds all the layers
     #special_layer_list holds all the information for each Linear layer
-    layer_list, special_layer_list, t_model_size = summary(model,(3,32,32))
+    if(model_id < 15):
+        layer_list, special_layer_list, t_model_size = summary(model,(1,1,20))
+    else:
+        layer_list, special_layer_list, t_model_size = summary(model,(1,1,10)) 
     loop_length = len(layer_list)
     #Remove the extra values after the layer list name
     for i in range(loop_length):
@@ -523,8 +615,11 @@ def train_models(dpm,trainloader):
     print(dpm.get_pipeline(0))
     worker1 = dpm.get_worker("DE0-Nano_1")
     worker2 = dpm.get_worker("DE0-Nano_2")
-    for i in range(len(dpm.get_pipeline(0))):
-        model = dpm.get_model_from_pipeline(0,i)
+    #NOTE: Hardcoded to use 15 since thats how many models per dataset
+    total_models = len(dpm.get_pipeline(0)) + len(dpm.get_pipeline(1))
+    for i in range(total_models):
+        print("which pipeline: ", i//15)
+        model = dpm.get_model_from_pipeline(i//15,i%15)
         print("my model at i: ", i, model)
         mymodel = model().to(0)
         send_model(mymodel,worker1, i)
@@ -570,11 +665,15 @@ def main():
 
     #get_boards(IP, PORT)
     packet_list = []
-    for i in range(10087):
-        packet_list.append(i)
+    for i in range(10):
+        packet_list.append(numpy.uint32(i))        
     print("what is packet_list len: ", len(packet_list))
+    '''
     worker = Worker("Board1", "localhost", 18500)
     send_content(packet_list, worker)
+    '''
+    list_to_hex(packet_list)
+
 
 
 if __name__ == '__main__':
