@@ -385,6 +385,7 @@ def send_model(model, worker, model_id):
     packet_list = []
     
     #Do this function today
+    birthday = now()
     layer_list, special_layer_list, t_model_size = get_model_layers(model, model_id)
     class_name = str(model.__class__).split(".")[-1].split("'")[0]
     print("what is model.__class__", str(model.__class__))
@@ -433,11 +434,13 @@ def send_model(model, worker, model_id):
     time_start = now()
     #print("What is packet_list: ", packet_list)
     string_bytes = list_to_hex(packet_list)
+    time_finish = now()
     write_content_to_file(model_id, string_bytes)
     #print("what is string_bytes: ", string_bytes)
     #send_content(packet_list, worker)
     #send_content_str(string_bytes, worker)
-    time_finish = now()
+    #time_finish = now()
+    print("Time to create model packet: ", time_finish-birthday)
     print("Time to send model: ", time_finish-time_start)
     print("Finished sending the model")
 
@@ -472,7 +475,8 @@ def send_data(trainloader, worker):
             #print(data_list)
             print("Sending data to RaspPi")
             time_start = now()
-            send_content(data_list,worker)
+            print("What is length of data_list: ", len(data_list))
+            #send_content(data_list,worker)
             time_finish = now()
             print("Finished sending data")
             total_time = time_finish-time_start
