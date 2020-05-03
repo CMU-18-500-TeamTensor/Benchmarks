@@ -361,6 +361,7 @@ def list_to_hex(packet_list):
             hex_val = int_to_hex(element)
         #print("what is hex_val: ", hex_val)
         hex_string += hex_val
+        #print(element,hex_val)
         
     #print(hex_string)
     return hex_string
@@ -423,7 +424,7 @@ def send_model(model, worker, model_id):
             #print("What is len of serializedBias: ", len(serializedBias))
             packet_list.extend(serializedKernel)
             packet_list.extend(serializedBias)
-    packet_list[3] = total_model_size
+    packet_list[3] = numpy.uint32(total_model_size)
     print("What is the model size: ", total_model_size)
     #print("What is len of packet_list: ", len(packet_list))
     myType = type(packet_list[0])
@@ -433,7 +434,9 @@ def send_model(model, worker, model_id):
     print("Sending model to RaspPi")
     time_start = now()
     #print("What is packet_list: ", packet_list)
+    #print(packet_list)
     string_bytes = list_to_hex(packet_list)
+    #print(string_bytes)
     time_finish = now()
     write_content_to_file(model_id, string_bytes)
     #print("what is string_bytes: ", string_bytes)
