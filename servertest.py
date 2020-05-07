@@ -119,7 +119,7 @@ def main(IP, PORT):
     print("Model info retrieved, attempting to get data")
     #called another time to get the data
     #for i in range(50000):
-    read_content(IP,PORT)
+    #read_content(IP,PORT)
     print("Data retrieved")
     print("Server finished")
     

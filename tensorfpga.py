@@ -294,11 +294,6 @@ def send_content_str(content_str, worker):
     #board = (worker.worker_ip, worker.worker_port)
     tcp_socket.connect(("localhost",18500))
     msg_len = len(content_str)
-    #content_len = len(content_list)
-    #print("content_len: ", content_len)
-    #send total total elements, as well as size of total byte stream
-    #total_elements = f'{len(content_list):<20}'
-    #total_stream_size = f'{len(pickle.dumps(content_list)):<20}'
     
     #print(total_elements, total_stream_size)
     total_str_len = f'{len(content_str):<20}'
@@ -395,53 +390,42 @@ def send_model(model, worker, model_id):
     total_model_size = 0
     packet_list.append(numpy.uint32(5))
     packet_list.append(numpy.uint32(0))
-    #chagne this to actually use the model #
     packet_list.append(numpy.uint32(model_id))
-    #change this to use the actual size of the model
-    #print("what is int32 of model_size: ", numpy.uint32(t_model_size))
-    #packet_list.append(numpy.uint32(t_model_size)) #size of model in word count #4th item should be replaced, 958 words is the magic number
-    packet_list.append(0) #Hard coding arbitrary value now, will put correct value later in the code
+    packet_list.append(0) #size of model in word, value updated after serialization 
     packet_list.append(numpy.uint32(len(layer_list))) #of layers in a model
     total_model_size += 5 #for the header stuff
+
     specialCounter = 0
-    #print("What is len of packet_list: ", len(packet_list))
     for layer in layer_list:
         if(layer == "ReLU"):
             packet_list.append(numpy.uint32(3)) #op code for ReLU layer
             total_model_size += 1
-            #packet_list.append(f32(3)) #op code for ReLU layer
         elif(layer == "Linear"):
             kernelTensor = special_layer_list[specialCounter][0]
             biasTensor = special_layer_list[specialCounter][1]
             specialCounter+=1
             packet_list.append(numpy.uint32(1)) #op code for Linear layer
-            #packet_list.append(f32(1)) #op code for Linear layer
-            #packet_str += "1,"
             serializedKernel = tensor_to_list(kernelTensor,2)
             serializedBias = tensor_to_list(biasTensor,1)
             total_model_size += len(serializedKernel) + len(serializedBias) + 1 #1 is for the opcode length
-            #print("What is len of serializedKernel: ", len(serializedKernel))
-            #print("What is len of serializedBias: ", len(serializedBias))
             packet_list.extend(serializedKernel)
             packet_list.extend(serializedBias)
     packet_list[3] = numpy.uint32(total_model_size)
-    print("What is the model size: ", total_model_size)
-    #print("What is len of packet_list: ", len(packet_list))
+    #print("What is the model size: ", total_model_size)
     myType = type(packet_list[0])
-    #print(myType)
     
 
     print("Sending model to RaspPi")
-    time_start = now()
     #print("What is packet_list: ", packet_list)
     #print(packet_list)
     string_bytes = list_to_hex(packet_list)
+    time_start = now()
     #print(string_bytes)
-    time_finish = now()
-    write_content_to_file(model_id, string_bytes)
+    #write_content_to_file(model_id, string_bytes)
     #print("what is string_bytes: ", string_bytes)
     #send_content(packet_list, worker)
-    #send_content_str(string_bytes, worker)
+    send_content_str(string_bytes, worker)
+    time_finish = now()
     #time_finish = now()
     print("Time to create model packet: ", time_finish-birthday)
     print("Time to send model: ", time_finish-time_start)

@@ -17,8 +17,6 @@ from tensorfpga import train_models
 from linear_benchmark import bench_suite
 #from benchmark import bench_suite
 
-# Third party library functio
-from torchsummary import summary
 
 import torch
 import torchvision
@@ -62,8 +60,6 @@ def main():
 	# FPGA
 	# buffer size is the number of samples can be stored in the Data Source Server
 	# buffer.
-	#dp1_id = dpm.add_pipeline(dp1, name="grayscale", buffer_size=10)
-	#dp2_id = dpm.add_pipeline(dp2, name="full_color", buffer_size=10)
 
 	#user function to pull dataset
 	trainloader = get_CIFAR10_dataset() # iterable over tuples (x, y)
@@ -77,25 +73,19 @@ def main():
 	dp_id1 = dpm.add_pipeline(pipeline_fn, "full_color", 10)
 	dp_id2 = dpm.add_pipeline(pipeline_fn, "grayscale", 10)
 	
-	'''
-	model1 = models[0]
-	model2 = models[13]
-	print("What is model 1: ", model1)
-	print("What is model 2: ", model2)
-	'''
+	
 	#User specificed which model goes to which pipeline
-	#In this scenario, we are adding Full Color Model 14 to the full color pipeline
+	#In this scenario, we are adding all full color models to the full color pipeline
+	#and all grayscale models to the grayscale pipeline
 	for i in range(15):
 		fc_model = fc_models[i]
 		gc_model = gc_models[i]
 		dpm.add_model(fc_model, dp_id1)
 		dpm.add_model(gc_model, dp_id2)
 	
-	#dpm.print_pipelines()
+	
 	#Once all the models have been added to their respective pipelines and the data
 	#has been pulled, we begin training the models
-	#my_model = model1().to(0)
-	#summary(my_model,(3,32,32))
 	#Pass in data pipeline manager and trainloader
 	train_models(dpm, trainloader)
 
